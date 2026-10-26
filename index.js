@@ -1,5 +1,18 @@
 const { default: makeWASocket, useMultiFileAuthState, DisconnectReason } = require('@whiskeysockets/baileys');
 const pino = require('pino');
+const express = require('express');
+
+// Render 24/7 uptime নিশ্চিত করার জন্য Express Server
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+app.get('/', (req, res) => {
+    res.send('🚀 FF ServicesPicks WhatsApp Bot is Running 24/7 Smoothly!');
+});
+
+app.listen(PORT, () => {
+    console.log(`🌐 Web server is running on port ${PORT}`);
+});
 
 async function connectToWhatsApp() {
     const { state, saveCreds } = await useMultiFileAuthState('auth_info_baileys');
@@ -20,13 +33,13 @@ async function connectToWhatsApp() {
                 connectToWhatsApp();
             }
         } else if (connection === 'open') {
-            console.log('✅ FF ServicesPicks WhatsApp Bot সফলভাবে যুক্ত হয়েছে!');
+            console.log('✅ FF ServicesPicks WhatsApp Bot সফলভাবে ক্লাউডে যুক্ত হয়েছে!');
         }
     });
 
     sock.ev.on('creds.update', saveCreds);
 
-    // Render log-e pairing code paoar jonno number
+    // Render Logs-এ Pairing Code পাওয়ার জন্য
     if (!sock.authState.creds.registered) {
         const phoneNumber = "8801951722651"; 
         setTimeout(async () => {
@@ -39,7 +52,7 @@ async function connectToWhatsApp() {
         }, 5000);
     }
 
-    // Message Handler
+    // Professional Smart Message Handler
     sock.ev.on('messages.upsert', async ({ messages }) => {
         const msg = messages[0];
         if (!msg.message || msg.key.fromMe) return;
@@ -50,107 +63,119 @@ async function connectToWhatsApp() {
 
         const text = messageText.trim().toLowerCase();
 
-        // 1. Main Menu
-        if (text === 'hi' || text === 'hello' || text === 'menu' || text === 'ff' || text === 'শুরু') {
+        // অপশন ১: প্যাকেজ ও দামসমূহ (৳২০০+)
+        if (text === '1' || text.includes('package') || text.includes('like') || text.includes('প্যাকেজ') || text.includes('দাম')) {
             await sock.sendMessage(senderID, { 
-                text: `🎮 *FF ServicesPicks-এ স্বাগতম!*
-✦ আপনার প্রোফাইল, আপনার স্টাইল — Free Fire profile আরও সুন্দর করুন Likes-এর সাথে! 🌟
+                text: `🔥 *FF ServicesPicks — প্রিমিয়াম ফ্রি ফায়ার লাইক প্যাকেজসমূহ (৳২০০+)* 
 
-🌐 *আমাদের অফিশিয়াল ওয়েবসাইট:*
-https://ffserviceshub.github.io/FF-Like-ServicesPicks/
-
-দয়া করে নিচের অপশনগুলো থেকে বেছে নিতে ১, ২, ৩, ৪ বা ৫ লিখে পাঠান:
-
-1️⃣ 🔥 প্রিমিয়াম প্যাকেজসমূহ (৳২০০+)
-2️⃣ 💳 bKash পেমেন্ট পদ্ধতি
-3️⃣ 📋 অর্ডার করার সঠিক নিয়ম
-4️⃣ 🛡️ নিরাপত্তা ও গুরুত্বপূর্ণ সতর্কতা
-5️⃣ 💬 অ্যাডমিনের সাথে সরাসরি কথা বলুন` 
-            });
-        } 
-        // 2. Option 1: Packages (৳200+)
-        else if (text === '1' || text === 'packages' || text === 'package') {
-            await sock.sendMessage(senderID, { 
-                text: `🔥 *আমাদের স্পেশাল ফ্রি ফায়ার লাইক প্যাকেজসমূহ (৳২০০+):*
+আমাদের জনপ্রিয় ও সেরা প্যাকেজগুলো দেখে নিন:
 
 1️⃣ *Ultra Package*
-• দাম: ৳২৫০ | ডেইলি: ২০০+ | মেয়াদ: ৩০ দিন
+   • দাম: ৳২৫০ | ডেইলি: ২০০+ | মেয়াদ: ৩০ দিন
 
 2️⃣ *60-Day Value*
-• দাম: ৳২২০ | ডেইলি: ৫০+ | মেয়াদ: ৬০ দিন
+   • দাম: ৳২২০ | ডেইলি: ৫০+ | মেয়াদ: ৬০ দিন
 
 3️⃣ *150+ Likes Package*
-• দাম: ৳২২০ | ডেইলি: ১৫০+ | মেয়াদ: ৩০ দিন
+   • দাম: ৳২২০ | ডেইলি: ১৫০+ | মেয়াদ: ৩০ দিন
 
 4️⃣ *60-Day Pro*
-• দাম: ৳৩২০ | ডেইলি: ৮০+ | মেয়াদ: ৬০ দিন
+   • দাম: ৳৩২০ | ডেইলি: ৮০+ | মেয়াদ: ৬০ দিন
 
 5️⃣ *Yearly Value*
-• দাম: ৳৮০০ | ডেইলি: ৫০+ | মেয়াদ: ৩৬৫ দিন
+   • দাম: ৳৮০০ | ডেইলি: ৫০+ | মেয়াদ: ৩৬৫ দিন
 
-6️⃣ *👑 50+ Likes Permanent Package*
-• দাম: ৳১,০৫০ | ডেইলি: ৫০+ | মেয়াদ: Permanent
+6️⃣ *👑 50+ Likes Permanent*
+   • দাম: ৳১,০৫০ | ডেইলি: ৫০+ | মেয়াদ: Permanent
 
 7️⃣ *🌟 Yearly Pro*
-• দাম: ৳১,২০০ | ডেইলি: ৮০+ | মেয়াদ: ৩৬৫ দিন
+   • দাম: ৳১,২০০ | ডেইলি: ৮০+ | মেয়াদ: ৩৬৫ দিন
 
-8️⃣ *💎 200+ Likes Permanent Package*
-• দাম: ৳৫,০০০ | ডেইলি: ২০০+ | মেয়াদ: Permanent
+8️⃣ *💎 200+ Likes Permanent*
+   • দাম: ৳৫,০০০ | ডেইলি: ২০০+ | মেয়াদ: Permanent
 
-🌐 সব প্যাকেজ একসাথে দেখতে ওয়েবসাইট ভিজিট করুন:
+🌐 সব প্যাকেজ বিস্তারিত দেখতে আমাদের ওয়েবসাইট ভিজিট করুন:
 https://ffserviceshub.github.io/FF-Like-ServicesPicks/
 
-🛒 *অর্ডার করার নিয়ম:*
-পেমেন্ট সম্পন্ন করে আপনার *Free Fire UID* এবং *Transaction ID (TrxID)* বা *Sender bKash Number* লিখে আমাদের এখানে পাঠিয়ে দিন।` 
+↩️ মূল মেনুতে ফিরে যেতে **"Menu"** লিখে পাঠান!` 
             });
         } 
-        // 3. Option 2: Payment Details
-        else if (text === '2' || text === 'payment') {
+        // অপশন ২: পেমেন্ট পদ্ধতি
+        else if (text === '2' || text.includes('payment') || text.includes('bkash') || text.includes('বিকাশ') || text.includes('টাকা')) {
             await sock.sendMessage(senderID, { 
-                text: `💳 *bKash Send Money পেমেন্ট পদ্ধতি:*
+                text: `💳 *bKash Send Money পেমেন্ট নির্দেশিকা*
 
-প্যাকেজের সঠিক টাকা নিচের পার্সোনাল নম্বরে *Send Money* করুন:
+প্যাকেজ কনফার্ম করতে সঠিক টাকা নিচের পার্সোনাল নম্বরে *Send Money* করুন:
+
 📱 *bKash (Personal):* \`01733054857\`
 
-⚠️ *পেমেন্ট করার পর করণীয়:*
+⚠️ *পেমেন্ট করার পর যা করতে হবে:*
 টাকা পাঠানোর পর চ্যাটে অবশ্যই আপনার:
-১. *Free Fire UID*
-২. *Transaction ID (TrxID)* অথবা *টাকা পাঠানো bKash মোবাইল নম্বর (Sender Number)* 
+১. *Free Fire UID* (শুধু সংখ্যা)
+২. *Transaction ID (TrxID)* অথবা *Sender bKash Number*
 
-আমাদের এখানে লিখে পাঠান। পেমেন্ট ম্যানুয়ালি যাচাই করার পর আপনার অর্ডার কনফার্ম হলে WhatsApp-এ জানিয়ে দেওয়া হবে! ✅` 
+লিখে পাঠিয়ে দিন। আমাদের টিম ম্যানুয়ালি পেমেন্ট যাচাই করার পর আপনার অর্ডার সফলভাবে কনফার্ম করে WhatsApp-এ জানিয়ে দেবে! ✅
+
+↩️ মূল মেনুতে ফিরে যেতে **"Menu"** লিখে পাঠান!` 
             });
         } 
-        // 4. Option 3: Order Instructions
-        else if (text === '3' || text === 'rules') {
+        // অপশন ৩: অর্ডার করার সঠিক নিয়ম
+        else if (text === '3' || text.includes('rules') || text.includes('অর্ডার') || text.includes('নিয়ম')) {
             await sock.sendMessage(senderID, { 
-                text: `📋 *অর্ডার করার সহজ নিয়ম:*
+                text: `📋 *খুব সহজেই যেভাবে অর্ডার করবেন:*
 
-১. ওয়েবসাইট ( https://ffserviceshub.github.io/FF-Like-ServicesPicks/ ) বা মেনু থেকে পছন্দের প্যাকেজ বেছে নিন।
-২. bKash Send Money করুন: \`01733054857\` নম্বরে।
-৩. চ্যাটে নিচের মতো করে তথ্যগুলো লিখে পাঠান:
+১️⃣ আমাদের ওয়েবসাইট বা প্যাকেজ লিস্ট থেকে আপনার পছন্দের প্যাকেজটি সিলেক্ট করুন।
+২️⃣ নির্দিষ্ট টাকা আমাদের bKash Personal নম্বরে (\`01733054857\`) *Send Money* করুন।
+৩️⃣ এরপর আমাদের চ্যাটে নিচের ফরম্যাটটি পূরণ করে পাঠিয়ে দিন:
 
-💬 *UID:* [আপনার ফ্রি ফায়ার UID]
-💬 *TrxID / Sender Number:* [ট্রানজাকশন আইডি অথবা যে নম্বর থেকে টাকা পাঠিয়েছেন]
+   💬 *UID:* [আপনার গেমের UID]
+   💬 *TrxID / Sender Number:* [ট্রানজাকশন আইডি বা নম্বর]
 
-৪. আমরা তথ্য যাচাই করার সাথে সাথে আপনার অর্ডার কনফার্মেশন মেসেজ WhatsApp-এ পেয়ে যাবেন! 📩` 
+৪️⃣ পেমেন্ট সফলভাবে যাচাই হওয়ার সাথে সাথেই আপনার অর্ডারটি কনফার্ম করে দেওয়া হবে! 🚀
+
+↩️ মূল মেনুতে ফিরে যেতে **"Menu"** লিখে পাঠান!` 
             });
         }
-        // 5. Option 4: FAQ / Safety
-        else if (text === '4' || text === 'faq') {
+        // অপশন ৪: নিরাপত্তা সতর্কতা ও FAQ
+        else if (text === '4' || text.includes('faq') || text.includes('safety') || text.includes('সতর্কতা')) {
             await sock.sendMessage(senderID, { 
-                text: `🛡️ *জরুরি নিরাপত্তা ও সাধারণ প্রশ্ন:*
+                text: `🛡️ *জরুরি নিরাপত্তা ও সাধারণ সতর্কতা:*
 
-❌ *পাসওয়ার্ড লাগবে না:* FF ServicesPicks কখনো আপনার গেম পাসওয়ার্ড, ফেসবুক পাসওয়ার্ড বা OTP চাইবে না।
+❌ *গেম পাসওয়ার্ড বা OTP:* FF ServicesPicks কখনো আপনার গেম পাসওয়ার্ড, ফেসবুক অ্যাকাউন্ট বা কোনো প্রকার OTP চাইবে না। এগুলো একান্তই আপনার নিজের কাছে সুরক্ষিত রাখুন।
+🔢 *সঠিক UID প্রদান:* Free Fire UID দেওয়ার সময় খুব ভালোভাবে চেক করে নেবেন (শুধু ৫-২০ ডিজিটের সংখ্যা)। ভুল UID-র কারণে লাইক ভুল আইডিতে চলে গেলে এর দায় আমাদের নয়।
+✋ *ম্যানুয়াল ভেরিফিকেশন:* WhatsApp-এ মেসেজ বা পেমেন্ট ইনফো পাঠানো মানেই ইনস্ট্যান্ট অর্ডার কনফার্ম নয়; অ্যাডমিন হাতে যাচাই করার পরই সার্ভিস স্টার্ট হবে।
 
-🔢 *সঠিক UID দিন:* UID দেওয়ার সময় ভালো করে মিলিয়ে দিন (শুধু সংখ্যা)। ভুল UID-তে লাইক্স চলে গেলে সংশোধনের সুযোগ থাকবে না।
-
-✅ *অর্ডার কনফার্মেশন:* মেসেজ পাঠালেই অর্ডার কনফার্ম নয়, অ্যাডমিন পেমেন্ট যাচাই করে WhatsApp-এ কনফার্ম করলে অর্ডার চালু হবে।` 
+↩️ মূল মেনুতে ফিরে যেতে **"Menu"** লিখে পাঠান!` 
             });
         }
-        // 6. Option 5: Support
-        else if (text === '5' || text === 'support') {
+        // অপশন ৫: সাপোর্ট বা অ্যাডমিনের সাথে কথা বলা
+        else if (text === '5' || text.includes('support') || text.includes('admin') || text.includes('সাহায্য')) {
             await sock.sendMessage(senderID, { 
-                text: `💬 আপনার প্রশ্ন, সার্ভিস সংক্রান্ত বিষয় বা অর্ডার নিয়ে ছোট একটি মেসেজ লিখে পাঠান। আমাদের সাপোর্ট প্রতিনিধি দ্রুত আপনার সাথে কথা বলবেন! ❤️` 
+                text: `💬 *কাস্টমার সাপোর্ট ও সাহায্য*
+
+আপনার অর্ডার, পেমেন্ট কিংবা সার্ভিস সংক্রান্ত যে কোনো প্রয়োজনে আপনার সমস্যাটি বিস্তারিত লিখে একটি ছোট মেসেজ পাঠিয়ে রাখুন। আমাদের সাপোর্ট প্রতিনিধি খুব শীঘ্রই আপনার সাথে যোগাযোগ করবেন এবং আপনাকে সহায়তা করবেন! ❤️
+
+↩️ মূল মেনুতে ফিরে যেতে **"Menu"** লিখে পাঠান!` 
+            });
+        }
+        // ডিফল্ট ওয়েলকাম ও মাল্টি-অপশন মেনু (যেকোনো মেসেজ বা Hi/Hello লিখলে এটি আসবে)
+        else {
+            await sock.sendMessage(senderID, { 
+                text: `🎮 *FF ServicesPicks-এ আপনাকে স্বাগতম!* 
+✦ আপনার প্রোফাইল, আপনার স্টাইল — Free Fire profile আরও সুন্দর করুন আস্থার সাথে Likes নিয়ে! 🌟
+
+🌐 *অফিশিয়াল ওয়েবসাইট:*
+https://ffserviceshub.github.io/FF-Like-ServicesPicks/
+
+আপনার সেবায় আমরা ২৪ ঘণ্টা প্রস্তুত। আপনার কী প্রয়োজন তা জানতে নিচের অপশনগুলোর সামনে থাকা **নম্বরটি (১, ২, ৩, ৪ বা ৫)** লিখে চ্যাটে পাঠিয়ে দিন:
+
+1️⃣ 🔥 প্রিমিয়াম প্যাকেজ ও দামসমূহ (৳২০০+)
+2️⃣ 💳 bKash পেমেন্ট পদ্ধতি ও নম্বর
+3️⃣ 📋 অর্ডার করার সঠিক নিয়মাবলী
+4️⃣ 🛡️ নিরাপত্তা সতর্কতা ও FAQ
+5️⃣ 💬 অ্যাডমিনের সাথে সরাসরি কথা বলুন
+
+*💡 টিপস: যে কোনো সময় মেনুতে ফিরে আসতে চ্যাটে শুধু "Menu" লিখে পাঠান।*` 
             });
         }
     });
