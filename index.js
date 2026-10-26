@@ -1,6 +1,7 @@
 const { default: makeWASocket, useMultiFileAuthState, DisconnectReason } = require('@whiskeysockets/baileys');
 const pino = require('pino');
 const express = require('express');
+const fs = require('fs');
 
 // Render 24/7 uptime নিশ্চিত করার জন্য Express Server
 const app = express();
@@ -15,7 +16,10 @@ app.listen(PORT, () => {
 });
 
 async function connectToWhatsApp() {
-    const { state, saveCreds } = await useMultiFileAuthState('auth_info_baileys');
+    // রেজিস্টার্ড না থাকলে পুরনো সেশন ফাইল অটোমেটিক ডিলিট করে দেওয়া হবে
+    const authFolder = 'auth_info_baileys';
+    
+    const { state, saveCreds } = await useMultiFileAuthState(authFolder);
 
     const sock = makeWASocket({
         logger: pino({ level: 'silent' }),
@@ -27,8 +31,18 @@ async function connectToWhatsApp() {
         const { connection, lastDisconnect } = update;
         
         if (connection === 'close') {
-            const shouldReconnect = (lastDisconnect.error)?.output?.statusCode !== DisconnectReason.loggedOut;
+            const statusCode = (lastDisconnect.error)?.output?.statusCode;
+            const shouldReconnect = statusCode !== DisconnectReason.loggedOut;
             console.log('Connection closed, reconnecting...', shouldReconnect);
+            
+            // সেশন এরর হলে ক্যাশ ডিলিট করে রিস্টার্ট করার লজিক
+            if (statusCode === DisconnectReason.loggedOut || statusCode === 401) {
+                console.log('Old session expired. Clearing cache...');
+                if (fs.existsSync(authFolder)) {
+                    fs.rmSync(authFolder, { recursive: true, force: true });
+                }
+            }
+            
             if (shouldReconnect) {
                 connectToWhatsApp();
             }
@@ -63,7 +77,7 @@ async function connectToWhatsApp() {
 
         const text = messageText.trim().toLowerCase();
 
-        // অপশন ১: প্যাকেজ ও দামসমূহ (৳২০০+)
+        // অপশন ১: প্যাকেজ ও দামসমূহ
         if (text === '1' || text.includes('package') || text.includes('like') || text.includes('প্যাকেজ') || text.includes('দাম')) {
             await sock.sendMessage(senderID, { 
                 text: `🔥 *FF ServicesPicks — প্রিমিয়াম ফ্রি ফায়ার লাইক প্যাকেজসমূহ (৳২০০+)* 
@@ -119,7 +133,7 @@ https://ffserviceshub.github.io/FF-Like-ServicesPicks/
 ↩️ মূল মেনুতে ফিরে যেতে **"Menu"** লিখে পাঠান!` 
             });
         } 
-        // অপশন ৩: অর্ডার করার সঠিক নিয়ম
+        // অপশন ৩: অর্ডার করার নিয়ম
         else if (text === '3' || text.includes('rules') || text.includes('অর্ডার') || text.includes('নিয়ম')) {
             await sock.sendMessage(senderID, { 
                 text: `📋 *খুব সহজেই যেভাবে অর্ডার করবেন:*
@@ -141,24 +155,24 @@ https://ffserviceshub.github.io/FF-Like-ServicesPicks/
             await sock.sendMessage(senderID, { 
                 text: `🛡️ *জরুরি নিরাপত্তা ও সাধারণ সতর্কতা:*
 
-❌ *গেম পাসওয়ার্ড বা OTP:* FF ServicesPicks কখনো আপনার গেম পাসওয়ার্ড, ফেসবুক অ্যাকাউন্ট বা কোনো প্রকার OTP চাইবে না। এগুলো একান্তই আপনার নিজের কাছে সুরক্ষিত রাখুন।
-🔢 *সঠিক UID প্রদান:* Free Fire UID দেওয়ার সময় খুব ভালোভাবে চেক করে নেবেন (শুধু ৫-২০ ডিজিটের সংখ্যা)। ভুল UID-র কারণে লাইক ভুল আইডিতে চলে গেলে এর দায় আমাদের নয়।
-✋ *ম্যানুয়াল ভেরিফিকেশন:* WhatsApp-এ মেসেজ বা পেমেন্ট ইনফো পাঠানো মানেই ইনস্ট্যান্ট অর্ডার কনফার্ম নয়; অ্যাডমিন হাতে যাচাই করার পরই সার্ভিস স্টার্ট হবে।
+❌ *গেম পাসওয়ার্ড বা OTP:* FF ServicesPicks কখনো আপনার গেম পাসওয়ার্ড, ফেসবুক অ্যাকাউন্ট বা কোনো প্রকার OTP চাইবে না।
+🔢 *সঠিক UID প্রদান:* Free Fire UID দেওয়ার সময় খুব ভালোভাবে চেক করে নেবেন (শুধু সংখ্যা)।
+✋ *ম্যানুয়াল ভেরিফিকেশন:* WhatsApp-এ তথ্য পাঠানোর পর অ্যাডমিন হাতে যাচাই করার পরই সার্ভিস স্টার্ট হবে।
 
 ↩️ মূল মেনুতে ফিরে যেতে **"Menu"** লিখে পাঠান!` 
             });
         }
-        // অপশন ৫: সাপোর্ট বা অ্যাডমিনের সাথে কথা বলা
+        // অপশন ৫: কাস্টমার সাপোর্ট
         else if (text === '5' || text.includes('support') || text.includes('admin') || text.includes('সাহায্য')) {
             await sock.sendMessage(senderID, { 
                 text: `💬 *কাস্টমার সাপোর্ট ও সাহায্য*
 
-আপনার অর্ডার, পেমেন্ট কিংবা সার্ভিস সংক্রান্ত যে কোনো প্রয়োজনে আপনার সমস্যাটি বিস্তারিত লিখে একটি ছোট মেসেজ পাঠিয়ে রাখুন। আমাদের সাপোর্ট প্রতিনিধি খুব শীঘ্রই আপনার সাথে যোগাযোগ করবেন এবং আপনাকে সহায়তা করবেন! ❤️
+আপনার অর্ডার বা পেমেন্ট সংক্রান্ত যে কোনো প্রয়োজনে একটি মেসেজ পাঠাক। আমাদের প্রতিনিধি দ্রুত আপনাকে সহায়তা করবেন! ❤️
 
 ↩️ মূল মেনুতে ফিরে যেতে **"Menu"** লিখে পাঠান!` 
             });
         }
-        // ডিফল্ট ওয়েলকাম ও মাল্টি-অপশন মেনু (যেকোনো মেসেজ বা Hi/Hello লিখলে এটি আসবে)
+        // ডিফল্ট মেনু
         else {
             await sock.sendMessage(senderID, { 
                 text: `🎮 *FF ServicesPicks-এ আপনাকে স্বাগতম!* 
@@ -167,7 +181,7 @@ https://ffserviceshub.github.io/FF-Like-ServicesPicks/
 🌐 *অফিশিয়াল ওয়েবসাইট:*
 https://ffserviceshub.github.io/FF-Like-ServicesPicks/
 
-আপনার সেবায় আমরা ২৪ ঘণ্টা প্রস্তুত। আপনার কী প্রয়োজন তা জানতে নিচের অপশনগুলোর সামনে থাকা **নম্বরটি (১, ২, ৩, ৪ বা ৫)** লিখে চ্যাটে পাঠিয়ে দিন:
+আপনার প্রয়োজনীয় সেবার সামনে থাকা **নম্বরটি (১, ২, ৩, ৪ বা ৫)** লিখে পাঠিয়ে দিন:
 
 1️⃣ 🔥 প্রিমিয়াম প্যাকেজ ও দামসমূহ (৳২০০+)
 2️⃣ 💳 bKash পেমেন্ট পদ্ধতি ও নম্বর
