@@ -15,9 +15,10 @@ app.listen(PORT, () => {
     console.log(`🌐 Web server is running on port ${PORT}`);
 });
 
-// ইউজারের সাপোর্ট মোড এবং ইউজারের প্রথম ভিজিট ট্র্যাক করার মেমোরি স্টোরেজ
+// মেমোরি স্টোরেজ: সাপোর্ট মোড, ইউজারের শেষ অ্যাক্টিভিটি এবং এরর থ্রটল করার জন্য ১ ঘণ্টার টাইমার
 const supportUsers = new Set();
-const interactedUsers = new Set(); // যারা একবার মেনু দেখেছে তাদের ট্র্যাক করার জন্য
+const lastUserActivity = new Map();
+const lastErrorActivity = new Map();
 
 async function connectToWhatsApp() {
     const authFolder = 'auth_info_baileys';
@@ -29,7 +30,7 @@ async function connectToWhatsApp() {
         browser: ["Windows", "Chrome", "115.0.0.0"]
     });
 
-    // পেয়ারিং কোড জেনারেট করার লজিক
+    // পেয়ারিং কোড জেনারেট করার লজিক
     if (!sock.authState.creds.registered) {
         const phoneNumber = "8801951722651"; // আপনার WhatsApp Business নম্বর
         setTimeout(async () => {
@@ -77,44 +78,41 @@ async function connectToWhatsApp() {
         if (!messageText) return;
 
         const text = messageText.trim().toLowerCase();
+        const currentTime = Date.now();
+        const lastTime = lastUserActivity.get(senderID) || 0;
+        const oneHour = 60 * 60 * 1000; // ১ ঘণ্টা সময় মিলিসেকেন্ডে
+        const twentyFourHours = 24 * oneHour;
 
         // ইউজার যদি সাপোর্ট মোডে থাকে
         if (supportUsers.has(senderID)) {
             if (text === 'menu' || text === 'মেনু') {
                 supportUsers.delete(senderID);
             } else {
-                return; // সাপোর্ট মোড চলাকালীন বোট অটো রিপ্লাই বন্ধ রাখবে
+                return; // সাপোর্ট মোড চলাকালীন বোট অটো রিপ্লাই বন্ধ রাখবে যাতে অ্যাডমিন সরাসরি কথা বলতে পারে
             }
         }
 
-        // মেইন মেনু দেখার কমান্ড বা ইউজারের প্রথম মেসেজ
-        if (text === 'menu' || text === 'মেনু' || !interactedUsers.has(senderID)) {
-            interactedUsers.add(senderID); // ইউজারকে লিস্টে যুক্ত করা হলো যাতে পরবর্তী মেসেজগুলো ট্র্যাক করা যায়
+        // মেইন মেনু দেখার কমান্ড অথবা অনেকদিন পর চ্যাটে ফিরলে সুদৃশ্য ওয়েলকাম মেসেজ
+        if (text === 'menu' || text === 'মেনু' || text === 'hi' || text === 'hello' || text === 'হাই' || text === 'হ্যালো' || lastTime === 0 || (currentTime - lastTime > twentyFourHours)) {
             supportUsers.delete(senderID);
+            lastUserActivity.set(senderID, currentTime);
+
+            let welcomeText = `🎮 *FF ServicesPicks-এ আপনাকে স্বাগতম!* \n\nআপনার ফ্রি ফায়ার প্রোফাইলকে আরও আকর্ষণীয় করতে আমাদের কাছ থেকে খুব সহজেই লাইক নিতে পারেন। ♥️`;
             
+            // যদি ইউজার ২৪ ঘণ্টা বা অনেক দিন পর ফিরে আসে
+            if (lastTime !== 0 && (currentTime - lastTime > twentyFourHours)) {
+                welcomeText = `✨ *Welcome Back! দীর্ঘদিন পর আমাদের চ্যাটে আপনাকে আবার ফিরে পেয়ে খুব ভালো লাগলো!* 🥰\n\nফ্রি ফায়ার প্রোফাইলকে আরও দারুণ করতে আমরা সবসময় আপনার পাশে আছি। ♥️`;
+            }
+
             await sock.sendMessage(senderID, { 
-                text: `🎮 *FF ServicesPicks-এ আপনাকে স্বাগতম!* 
-
-আপনার ফ্রি ফায়ার প্রোফাইলকে আরও আকর্ষণীয় করতে আমাদের কাছ থেকে খুব সহজেই লাইক নিতে পারেন। ♥️
-
-🌐 *অফিশিয়াল ওয়েবসাইট:*
-https://ffserviceshub.github.io/FF-Like-ServicesPicks/
-
-নিচের অপশনগুলোর সামনে থাকা *নম্বরটি (১ থেকে ৫)* চ্যাটে লিখে পাঠিয়ে দিন:
-
-1️⃣ 🔥 লাইক প্যাকেজ ও দামসমূহ (৳২০০+)
-2️⃣ 💳 বিকাশ (bKash) পেমেন্ট করার নিয়ম
-3️⃣ 📋 খুব সহজে যেভাবে অর্ডার করবেন
-4️⃣ 🛡️ জরুরি নিরাপত্তা ও সাধারণ সতর্কতা
-5️⃣ 💬 অ্যাডমিনের সাথে সরাসরি কথা বলুন
-
-*💡 টিপস:* যেকোনো সময় মেইন মেনুতে ফিরে আসতে চ্যাটে শুধু **"Menu"** লিখে পাঠান।` 
+                text: `${welcomeText}\n\n🌐 *অফিশিয়াল ওয়েবসাইট:*\nhttps://ffserviceshub.github.io/FF-Like-ServicesPicks/\n\nনিচের অপশনগুলোর সামনে থাকা *নম্বরটি* চ্যাটে লিখে পাঠিয়ে দিন:\n\n1️⃣ 🔥 লাইক প্যাকেজ ও দামসমূহ (৳২০০+)\n2️⃣ 💳 বিকাশ (bKash) পেমেন্ট করার নিয়ম\n3️⃣ 📋 খুব সহজে যেভাবে অর্ডার করবেন\n4️⃣ 🛡️ জরুরি নিরাপত্তা ও সাধারণ সতর্কতা\n5️⃣ 💬 অ্যাডমিনের সাথে সরাসরি কথা বলুন\n\n*💡 টিপস:* যেকোনো সময় মূল মেনুতে ফিরে আসতে চ্যাটে শুধু **"Menu"** লিখে পাঠান।` 
             });
             return;
         }
 
         // অপশন ১: প্যাকেজ ও দামসমূহ
         if (text === '1' || text.includes('package') || text.includes('like') || text.includes('প্যাকেজ') || text.includes('দাম')) {
+            lastUserActivity.set(senderID, currentTime);
             await sock.sendMessage(senderID, { 
                 text: `🔥 *FF ServicesPicks — প্রিমিয়াম ফ্রি ফায়ার লাইক প্যাকেজসমূহ* 
 
@@ -125,7 +123,7 @@ https://ffserviceshub.github.io/FF-Like-ServicesPicks/
 3️⃣ *150+ Likes Package* • দাম: ৳২২০ | ডেইলি: ১৫০+ লাইক ♥️ | মেয়াদ: ৩০ দিন
 4️⃣ *60-Day Pro* • দাম: ৳৩২০ | ডেইলি: ৮০+ লাইক ♥️ | মেয়াদ: ৬০ দিন
 5️⃣ *Yearly Value* • দাম: ৳৮০০ | ডেইলি: ৫০+ লাইক ♥️ | মেয়াদ: ৩৬৫ দিন
-6️⃣ *👑 50+ Likes Permanent* • দাম: ৳১,০৫০ | ডেইলি: ৫০+ লাইক ♥️ | মেয়াদ: আজীবন
+6️⃣ *👑 50+ Likes Permanent* • দাম: ৳১,০৫০ | ডেইলি: ডেইলি ৫০+ লাইক ♥️ | মেয়াদ: আজীবন
 7️⃣ *🌟 Yearly Pro* • দাম: ৳১,২০০ | ডেইলি: ৮০+ লাইক ♥️ | মেয়াদ: ৩৬৫ দিন
 8️⃣ *💎 200+ Likes Permanent* • দাম: ৳৫,০০০ | ডেইলি: ২০০+ লাইক ♥️ | মেয়াদ: আজীবন
 
@@ -137,34 +135,37 @@ https://ffserviceshub.github.io/FF-Like-ServicesPicks/
         } 
         // অপশন ২: পেমেন্ট পদ্ধতি
         else if (text === '2' || text.includes('payment') || text.includes('bkash') || text.includes('বিকাশ') || text.includes('টাকা')) {
+            lastUserActivity.set(senderID, currentTime);
             await sock.sendMessage(senderID, { 
                 text: `💳 *বিকাশ (bKash) পেমেন্ট নির্দেশিকা*
 
 প্যাকেজ কনফার্ম করতে নিচের পার্সোনাল নম্বরে সঠিক টাকা *Send Money* করুন:
 📱 *bKash Personal:* \`01733054857\`
 
-⚠️ টাকা পাঠানোর পর চ্যাটে আপনার গেমের *UID* এবং *TrxID* বা বিকাশ নম্বর পাঠিয়ে দিন। ✅
+⚠️ টাকা পাঠানোর পর চ্যাটে আপনার গেমের *UID* এবং *TrxID* বা বিকাশ নম্বর পাঠিয়ে দিন। ✅
 
 ↩️ মূল মেনুতে যেতে চ্যাটে **"Menu"** লিখুন!` 
             });
         } 
         // অপশন ৩: অর্ডার করার সঠিক নিয়ম
         else if (text === '3' || text.includes('rules') || text.includes('অর্ডার') || text.includes('নিয়ম')) {
+            lastUserActivity.set(senderID, currentTime);
             await sock.sendMessage(senderID, { 
                 text: `📋 *খুব সহজেই যেভাবে অর্ডার করবেন:*
 
 ১️⃣ প্রথমে চ্যাটে **1** লিখে প্যাকেজ পছন্দ করুন।
 ২️⃣ বিকাশ পার্সোনাল নম্বরে (\`01733054857\`) টাকা *Send Money* করুন।
-৩️⃣ এরপর চ্যাটে আপনার **UID** এবং **TrxID** লিখে পাঠিয়ে দিন। 🚀
+৩️⃣ এরপর চ্যাটে আপনার **UID** এবং **TrxID** লিখে পাঠিয়ে দিন। 🚀
 
 ↩️ মূল মেনুতে যেতে চ্যাটে **"Menu"** লিখুন!` 
             });
         }
         // অপশন ৪: নিরাপত্তা সতর্কতা
         else if (text === '4' || text.includes('faq') || text.includes('safety') || text.includes('সতর্কতা')) {
+            lastUserActivity.set(senderID, currentTime);
             await sock.sendMessage(senderID, { 
                 text: `🛡️ *জরুরি নিরাপত্তা ও সতর্কতা:*
-❌ গেম পাসওয়ার্ড বা OTP কাউকে দেবেন না। FF ServicesPicks কখনো পাসওয়ার্ড চায় না। সঠিক UID প্রদান করুন।
+❌ গেম পাসওয়ার্ড বা OTP কাউকে দেবেন না। FF ServicesPicks কখনো পাসওয়ার্ড চায় না। সঠিক UID প্রদান করুন।
 
 ↩️ মূল মেনুতে যেতে চ্যাটে **"Menu"** লিখুন!` 
             });
@@ -172,20 +173,29 @@ https://ffserviceshub.github.io/FF-Like-ServicesPicks/
         // অপশন ৫: কাস্টমার সাপোর্ট
         else if (text === '5' || text.includes('support') || text.includes('admin') || text.includes('সাহায্য')) {
             supportUsers.add(senderID);
+            lastUserActivity.set(senderID, currentTime);
             await sock.sendMessage(senderID, { 
-                text: `💬 *কাস্টমার সাপোর্ট ও সাহায্য*
+                text: `💬 *অ্যাডমিন ও কাস্টমার সাপোর্ট*
 আপনার মেসেজটি এখানে লিখে পাঠান। খুব শীঘ্রই অ্যাডমিন আপনার সাথে কথা বলবেন! ❤️` 
             });
         }
-        // ইউজার ভুল বা আবলতাবল কিছু লিখলে আপনার চাওয়া ফরম্যাটে মেসেজ দেবে
+        // ইউজার ভুল বা আবলতাবল কিছু লিখলে (১ ঘণ্টার টাইমার চেক করে তারপর মেসেজ পাঠাবে)
         else {
-            await sock.sendMessage(senderID, { 
-                text: `❌ দুঃখিত, আপনার কমান্ডটি বুঝতে পারিনি। 
+            const lastErrorTime = lastErrorActivity.get(senderID) || 0;
+            if (currentTime - lastErrorTime > oneHour) {
+                lastErrorActivity.set(senderID, currentTime);
+                lastUserActivity.set(senderID, currentTime);
+                await sock.sendMessage(senderID, { 
+                    text: `❌ দুঃখিত, আপনার কমান্ডটি বুঝতে পারিনি। 
 
 • অর্ডার করতে ও সবকিছু জানতে চ্যাটে টাইপ করুন: **Menu**
 • কীভাবে অর্ডার করবেন জানতে চ্যাটে টাইপ করুন: **3**
 • অ্যাডমিনের সাথে যোগাযোগ বা সাপোর্টের জন্য টাইপ করুন: **4** বা **5**` 
-            });
+                });
+            } else {
+                // ১ ঘণ্টার মধ্যে বারবার ভুল লিখলে বোট বিরক্ত করবে না (সাইলেন্ট থাকবে)
+                return;
+            }
         }
     });
 }
