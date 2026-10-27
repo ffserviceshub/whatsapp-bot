@@ -25,9 +25,21 @@ async function connectToWhatsApp() {
     const sock = makeWASocket({
         logger: pino({ level: 'silent' }),
         auth: state,
-        printQRInTerminal: true,
         browser: ["Windows", "Chrome", "115.0.0.0"]
     });
+
+    // পেয়ারিং কোড জেনারেট করার লজিক (লগআউট করার পর নতুন কোড পাওয়ার জন্য)
+    if (!sock.authState.creds.registered) {
+        const phoneNumber = "8801951722651"; // আপনার WhatsApp Business নম্বর
+        setTimeout(async () => {
+            try {
+                let code = await sock.requestPairingCode(phoneNumber);
+                console.log(`✨ YOUR PAIRING CODE IS: ${code?.match(/.{1,4}/g)?.join('-') || code}`);
+            } catch (err) {
+                console.log('Error requesting pairing code:', err);
+            }
+        }, 4000);
+    }
 
     sock.ev.on('connection.update', async (update) => {
         const { connection, lastDisconnect } = update;
@@ -110,28 +122,28 @@ async function connectToWhatsApp() {
 আপনার পছন্দের প্যাকেজটি বেছে নিন:
 
 1️⃣ *Ultra Package*
-• দাম: ৳২৫০ | ডেইলি: ২০০+ লাইক ♥️ | মেয়াদ: ৩০ দিন
+- দাম: ৳২৫০ | ডেইলি: ২০০+ লাইক ♥️ | মেয়াদ: ৩০ দিন
 
 2️⃣ *60-Day Value*
-• দাম: ৳২২০ | ডেইলি: ৫০+ লাইক ♥️ | মেয়াদ: ৬০ দিন
+- দাম: ৳২২০ | ডেইলি: ৫০+ লাইক ♥️ | মেয়াদ: ৬০ দিন
 
 3️⃣ *150+ Likes Package*
-• দাম: ৳২২০ | ডেইলি: ১৫০+ লাইক ♥️ | মেয়াদ: ৩০ দিন
+- দাম: ৳২২০ | ডেইলি: ১৫০+ লাইক ♥️ | মেয়াদ: ৩০ দিন
 
 4️⃣ *60-Day Pro*
-• দাম: ৳৩২০ | ডেইলি: ৮০+ লাইক ♥️ | মেয়াদ: ৬০ দিন
+- দাম: ৳৩২০ | ডেইলি: ৮০+ লাইক ♥️ | মেয়াদ: ৬০ দিন
 
 5️⃣ *Yearly Value*
-• দাম: ৳৮০০ | ডেইলি: ৫০+ লাইক ♥️ | মেয়াদ: ৩৬৫ দিন
+- দাম: ৳৮০০ | ডেইলি: ৫০+ লাইক ♥️ | মেয়াদ: ৩৬৫ দিন
 
 6️⃣ *👑 50+ Likes Permanent*
-• দাম: ৳১,০৫০ | ডেইলি: ৫০+ লাইক ♥️ | মেয়াদ: আজীবন (Permanent)
+- দাম: ৳১,০৫০ | ডেইলি: ৫০+ লাইক ♥️ | মেয়াদ: আজীবন (Permanent)
 
 7️⃣ *🌟 Yearly Pro*
-• দাম: ৳১,২০০ | ডেইলি: ৮০+ লাইক ♥️ | মেয়াদ: ৩৬৫ দিন
+- দাম: ৳১,২০০ | ডেইলি: ৮০+ লাইক ♥️ | মেয়াদ: ৩৬৫ দিন
 
 8️⃣ *💎 200+ Likes Permanent*
-• দাম: ৳৫,০০০ | ডেইলি: ২০০+ লাইক ♥️ | মেয়াদ: আজীবন (Permanent)
+- দাম: ৳৫,০০০ | ডেইলি: ২০০+ লাইক ♥️ | মেয়াদ: আজীবন (Permanent)
 
 🌐 সব প্যাকেজের বিস্তারিত ও ফুল লিস্ট দেখতে ভিজিট করুন:
 https://ffserviceshub.github.io/FF-Like-ServicesPicks/
