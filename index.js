@@ -28,7 +28,7 @@ async function connectToWhatsApp() {
         browser: ["Windows", "Chrome", "115.0.0.0"]
     });
 
-    // পেয়ারিং কোড জেনারেট করার লজিক (লগআউট করার পর নতুন কোড পাওয়ার জন্য)
+    // পেয়ারিং কোড জেনারেট করার লজিক
     if (!sock.authState.creds.registered) {
         const phoneNumber = "8801951722651"; // আপনার WhatsApp Business নম্বর
         setTimeout(async () => {
@@ -72,40 +72,33 @@ async function connectToWhatsApp() {
         if (!msg.message || msg.key.fromMe) return;
 
         const senderID = msg.key.remoteJid;
-        
-        // টেক্সট অথবা লিস্ট রেসপন্স ক্যাচ করার লজিক
-        const messageText = msg.message.conversation || 
-                            msg.message.extendedTextMessage?.text || 
-                            msg.message.listResponseMessage?.singleSelectReply?.selectedRowId;
-                            
+        const messageText = msg.message.conversation || msg.message.extendedTextMessage?.text;
         if (!messageText) return;
 
         const text = messageText.trim().toLowerCase();
 
-        // ইউজার যদি যেকোনো সময় "menu" লিখে পাঠায়, তবে সাপোর্ট মোড কেটে যাবে এবং মূল লিস্ট মেনু চলে আসবে
-        if (text === 'menu' || text === 'মেনু') {
+        // মূল মেনু কমান্ড
+        if (text === 'menu' || text === 'মেনু' || text === 'hi' || text === 'hello' || text === 'হাই' || text === 'হ্যালো') {
             supportUsers.delete(senderID);
             
-            const listMessage = {
-                text: `🎮 *FF ServicesPicks-এ আপনাকে স্বাগতম!* \n\nআপনার ফ্রি ফায়ার প্রোফাইলকে আরও আকর্ষণীয় করতে আমাদের কাছ থেকে খুব সহজেই লাইক নিতে পারেন। ♥️\n\n🌐 অফিশিয়াল ওয়েবসাইট:\nhttps://ffserviceshub.github.io/FF-Like-ServicesPicks/\n\nনিচের **"View Menu"** বাটনে ক্লিক করে অপশনগুলো বেছে নিন:`,
-                footer: "FF ServicesPicks Auto Bot",
-                title: "✨ Main Menu ✨",
-                buttonText: "👉 View Menu",
-                sections: [
-                    {
-                        title: "সেবাসমূহ ও তথ্য",
-                        rows: [
-                            { title: "🔥 লাইক প্যাকেজ ও দামসমূহ", rowId: "1", description: "সকল প্রিমিয়াম ফ্রি ফায়ার লাইক প্যাকেজ" },
-                            { title: "💳 বিকাশ (bKash) পেমেন্ট নিয়ম", rowId: "2", description: "টাকা পাঠানোর পার্সোনাল নম্বর ও নিয়ম" },
-                            { title: "📋 খুব সহজে যেভাবে অর্ডার করবেন", rowId: "3", description: "ধাপে ধাপে অর্ডার করার সঠিক গাইডলাইন" },
-                            { title: "🛡️ জরুরি নিরাপত্তা সতর্কতা", rowId: "4", description: "অ্যাকাউন্ট সেফটি ও গুরুত্বপূর্ণ টিপস" },
-                            { title: "💬 অ্যাডমিনের সাথে সরাসরি কথা বলুন", rowId: "5", description: "সরাসরি সাপোর্ট ও লাইভ চ্যাট মোড" }
-                        ]
-                    }
-                ]
-            };
-            
-            await sock.sendMessage(senderID, listMessage);
+            await sock.sendMessage(senderID, { 
+                text: `🎮 *FF ServicesPicks-এ আপনাকে স্বাগতম!* 
+
+আপনার ফ্রি ফায়ার প্রোফাইলকে আরও আকর্ষণীয় করতে আমাদের কাছ থেকে খুব সহজেই লাইক নিতে পারেন। ♥️
+
+🌐 *অফিশিয়াল ওয়েবসাইট:*
+https://ffserviceshub.github.io/FF-Like-ServicesPicks/
+
+নিচের অপশনগুলোর সামনে থাকা *নম্বরটি (১ থেকে ৫)* চ্যাটে লিখে পাঠিয়ে দিন:
+
+1️⃣ 🔥 লাইক প্যাকেজ ও দামসমূহ (৳২০০+)
+2️⃣ 💳 বিকাশ (bKash) পেমেন্ট করার নিয়ম
+3️⃣ 📋 খুব সহজে যেভাবে অর্ডার করবেন
+4️⃣ 🛡️ জরুরি নিরাপত্তা ও সাধারণ সতর্কতা
+5️⃣ 💬 অ্যাডমিনের সাথে সরাসরি কথা বলুন
+
+*💡 টিপস:* যেকোনো সময় মেইন মেনুতে ফিরে আসতে চ্যাটে শুধু **"Menu"** লিখে পাঠান।` 
+            });
             return;
         }
 
@@ -122,28 +115,28 @@ async function connectToWhatsApp() {
 আপনার পছন্দের প্যাকেজটি বেছে নিন:
 
 1️⃣ *Ultra Package*
-- দাম: ৳২৫০ | ডেইলি: ২০০+ লাইক ♥️ | মেয়াদ: ৩০ দিন
+• দাম: ৳২৫০ | ডেইলি: ২০০+ লাইক ♥️ | মেয়াদ: ৩০ দিন
 
 2️⃣ *60-Day Value*
-- দাম: ৳২২০ | ডেইলি: ৫০+ লাইক ♥️ | মেয়াদ: ৬০ দিন
+• দাম: ৳২২০ | ডেইলি: ৫০+ লাইক ♥️ | মেয়াদ: ৬০ দিন
 
 3️⃣ *150+ Likes Package*
-- দাম: ৳২২০ | ডেইলি: ১৫০+ লাইক ♥️ | মেয়াদ: ৩০ দিন
+• দাম: ৳২২০ | ডেইলি: ১৫০+ লাইক ♥️ | মেয়াদ: ৩০ দিন
 
 4️⃣ *60-Day Pro*
-- দাম: ৳৩২০ | ডেইলি: ৮০+ লাইক ♥️ | মেয়াদ: ৬০ দিন
+• দাম: ৳৩২০ | ডেইলি: ৮০+ লাইক ♥️ | মেয়াদ: ৬০ দিন
 
 5️⃣ *Yearly Value*
-- দাম: ৳৮০০ | ডেইলি: ৫০+ লাইক ♥️ | মেয়াদ: ৩৬৫ দিন
+• দাম: ৳৮০০ | ডেইলি: ৫০+ লাইক ♥️ | মেয়াদ: ৩৬৫ দিন
 
 6️⃣ *👑 50+ Likes Permanent*
-- দাম: ৳১,০৫০ | ডেইলি: ৫০+ লাইক ♥️ | মেয়াদ: আজীবন (Permanent)
+• দাম: ৳১,০৫০ | ডেইলি: ৫০+ লাইক ♥️ | মেয়াদ: আজীবন (Permanent)
 
 7️⃣ *🌟 Yearly Pro*
-- দাম: ৳১,২০০ | ডেইলি: ৮০+ লাইক ♥️ | মেয়াদ: ৩৬৫ দিন
+• দাম: ৳১,২০০ | ডেইলি: ৮০+ লাইক ♥️ | মেয়াদ: ৩৬৫ দিন
 
 8️⃣ *💎 200+ Likes Permanent*
-- দাম: ৳৫,০০০ | ডেইলি: ২০০+ লাইক ♥️ | মেয়াদ: আজীবন (Permanent)
+• দাম: ৳৫,০০০ | ডেইলি: ২০০+ লাইক ♥️ | মেয়াদ: আজীবন (Permanent)
 
 🌐 সব প্যাকেজের বিস্তারিত ও ফুল লিস্ট দেখতে ভিজিট করুন:
 https://ffserviceshub.github.io/FF-Like-ServicesPicks/
@@ -210,28 +203,13 @@ https://ffserviceshub.github.io/FF-Like-ServicesPicks/
 ↩️ মূল মেনুতে আবার ফিরে যেতে চাইলে চ্যাটে যেকোনো সময় শুধু **"Menu"** লিখে পাঠান।` 
             });
         }
-        // ডিফল্ট মেনু (লিস্ট বাটন সহ)
+        // ভুল কিছু লিখলে গাইড করার জন্য
         else {
-            const listMessage = {
-                text: `🎮 *FF ServicesPicks-এ আপনাকে স্বাগতম!* \n\nআপনার ফ্রি ফায়ার প্রোফাইলকে আরও আকর্ষণীয় করতে আমাদের কাছ থেকে খুব সহজেই লাইক নিতে পারেন। ♥️\n\n🌐 অফিশিয়াল ওয়েবসাইট:\nhttps://ffserviceshub.github.io/FF-Like-ServicesPicks/\n\nনিচের **"View Menu"** বাটনে ক্লিক করে অপশনগুলো বেছে নিন:`,
-                footer: "FF ServicesPicks Auto Bot",
-                title: "✨ Main Menu ✨",
-                buttonText: "👉 View Menu",
-                sections: [
-                    {
-                        title: "সেবাসমূহ ও তথ্য",
-                        rows: [
-                            { title: "🔥 লাইক প্যাকেজ ও দামসমূহ", rowId: "1", description: "সকল প্রিমিয়াম ফ্রি ফায়ার লাইক প্যাকেজ" },
-                            { title: "💳 বিকাশ (bKash) পেমেন্ট নিয়ম", rowId: "2", description: "টাকা পাঠানোর পার্সোনাল নম্বর ও নিয়ম" },
-                            { title: "📋 খুব সহজে যেভাবে অর্ডার করবেন", rowId: "3", description: "ধাপে ধাপে অর্ডার করার সঠিক গাইডলাইন" },
-                            { title: "🛡️ জরুরি নিরাপত্তা সতর্কতা", rowId: "4", description: "অ্যাকাউন্ট সেফটি ও গুরুত্বপূর্ণ টিপস" },
-                            { title: "💬 অ্যাডমিনের সাথে সরাসরি কথা বলুন", rowId: "5", description: "সরাসরি সাপোর্ট ও লাইভ চ্যাট মোড" }
-                        ]
-                    }
-                ]
-            };
-            
-            await sock.sendMessage(senderID, listMessage);
+            await sock.sendMessage(senderID, { 
+                text: `❌ দুঃখিত, আপনার কমান্ডটি বুঝতে পারিনি। 
+
+মূল মেনু দেখতে এবং অপশনগুলো পেতে চ্যাটে শুধু **"Menu"** লিখে পাঠান।` 
+            });
         }
     });
 }
