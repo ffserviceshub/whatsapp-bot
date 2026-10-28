@@ -22,7 +22,7 @@ const userState = new Map();
 const lastUserActivity = new Map();
 const lastErrorActivity = new Map();
 
-// Website এবং WhatsApp order hold
+// Website/WhatsApp order hold: 24-hour auto-reply pause
 const orderHoldFile = 'order_hold_state.json';
 const orderHoldUntil = new Map();
 
@@ -53,6 +53,49 @@ function saveOrderHolds() {
     }
 }
 
+// Message থেকে text বের করা
+function getMessageText(message) {
+    if (!message) return '';
+
+    return (
+        message.conversation ||
+        message.extendedTextMessage?.text ||
+        message.imageMessage?.caption ||
+        message.videoMessage?.caption ||
+        message.documentMessage?.caption ||
+        message.ephemeralMessage?.message?.conversation ||
+        message.ephemeralMessage?.message?.extendedTextMessage?.text ||
+        message.viewOnceMessage?.message?.conversation ||
+        message.viewOnceMessage?.message?.extendedTextMessage?.text ||
+        ''
+    ).trim();
+}
+
+// WhatsApp order message শনাক্ত করা
+function isOrderMessage(messageText) {
+    const text = messageText.toLowerCase();
+
+    // Website order message-এর জন্য
+    const websiteOrder =
+        text.includes('please verify my order details') &&
+        text.includes('order details') &&
+        text.includes('free fire uid');
+
+    // WhatsApp-এ পাঠানো order template-এর জন্য
+    const hasPackage = /package\s*:/i.test(messageText);
+    const hasPrice = /price\s*:/i.test(messageText);
+    const hasUID = /(?:free fire\s*)?uid\s*:/i.test(messageText);
+    const hasTrxID = /(?:trx\s*id|trxid|transaction\s*id)\s*\/?\s*(?:number)?\s*:/i.test(messageText);
+
+    const whatsappOrder =
+        hasPackage &&
+        hasPrice &&
+        hasUID &&
+        hasTrxID;
+
+    return websiteOrder || whatsappOrder;
+}
+
 async function connectToWhatsApp() {
     const authFolder = 'auth_info_baileys';
     const { state, saveCreds } = await useMultiFileAuthState(authFolder);
@@ -60,12 +103,12 @@ async function connectToWhatsApp() {
     const sock = makeWASocket({
         logger: pino({ level: 'silent' }),
         auth: state,
-        browser: ["Windows", "Chrome", "115.0.0.0"]
+        browser: ['Windows', 'Chrome', '115.0.0.0']
     });
 
     // Pairing code
     if (!sock.authState.creds.registered) {
-        const phoneNumber = "8801951722651";
+        const phoneNumber = '8801951722651';
 
         setTimeout(async () => {
             try {
@@ -97,147 +140,114 @@ async function connectToWhatsApp() {
             }
 
             if (shouldReconnect) {
-                setTimeout(() => connectToWhatsApp(), 3000);
+                connectToWhatsApp();
             }
         } else if (connection === 'open') {
-            console.log('✅ FF ServicesPicks WhatsApp Bot সফলভাবে ক্লাউডে যুক্ত হয়েছে!');
+            console.log('✅ FF ServicesPicks WhatsApp Bot successfully connected!');
         }
     });
 
     sock.ev.on('creds.update', saveCreds);
 
     // অটো রিপ্লাই ও মেনু হ্যান্ডলার
-    sock.ev.on('messages.upsert', async ({ messages, type }) => {
-        if (type && type !== 'notify') return;
+    sock.ev.on('messages.upsert', async ({ messages }) => {
+        try {
+            const msg = messages?.[0];
 
-        const msg = messages?.[0];
-        if (!msg?.message || msg.key.fromMe) return;
+            if (!msg?.message || msg.key.fromMe) return;
 
-        const senderID = msg.key.remoteJid;
+            const senderID = msg.key.remoteJid;
 
-        // Group ও status message উপেক্ষা
-        if (
-            !senderID ||
-            senderID === 'status@broadcast' ||
-            senderID.endsWith('@g.us')
-        ) {
-            return;
-        }
+            // Group chat-এ bot reply করবে না
+            if (!senderID || senderID.endsWith('@g.us') || senderID === 'status@broadcast') {
+                return;
+            }
 
-        const messageText =
-            msg.message.conversation ||
-            msg.message.extendedTextMessage?.text ||
-            msg.message.imageMessage?.caption ||
-            msg.message.videoMessage?.caption;
+            const messageText = getMessageText(msg.message);
+            if (!messageText) return;
 
-        if (!messageText) return;
+            const text = messageText.trim().toLowerCase();
+            const currentTime = Date.now();
+            const lastTime = lastUserActivity.get(senderID) || 0;
+            const oneHour = 60 * 60 * 1000;
+            const twentyFourHours = 24 * oneHour;
 
-        const text = messageText.trim().toLowerCase();
-        const currentTime = Date.now();
-        const lastTime = lastUserActivity.get(senderID) || 0;
-        const oneHour = 60 * 60 * 1000;
-        const twentyFourHours = 24 * oneHour;
-        const isMenu = text === 'menu' || text === 'মেনু';
+            const holdUntil = orderHoldUntil.get(senderID) || 0;
 
-        // Website order detection
-        const isWebsiteOrder =
-            text.includes('please verify my order details') &&
-            text.includes('order details') &&
-            text.includes('free fire uid');
+            // 24 ঘণ্টার hold চললে আর কোনো auto-reply নয়
+            if (holdUntil > currentTime) {
+                return;
+            }
 
-        const holdUntil = orderHoldUntil.get(senderID) || 0;
-
-        // Hold চলাকালে শুধু Menu দিলে bot আবার চালু হবে
-        if (holdUntil > currentTime) {
-            if (isMenu) {
+            // Hold শেষ হয়ে গেলে মুছে ফেলো
+            if (holdUntil !== 0 && holdUntil <= currentTime) {
                 orderHoldUntil.delete(senderID);
                 saveOrderHolds();
+            }
+
+            // FIX: Website অথবা WhatsApp order format শনাক্ত করা
+            if (isOrderMessage(messageText)) {
+                orderHoldUntil.set(senderID, currentTime + twentyFourHours);
+                saveOrderHolds();
+
+                // অর্ডার জমা দেওয়ার পর আগের payment state সরিয়ে দাও
                 userState.delete(senderID);
                 supportUsers.delete(senderID);
                 lastUserActivity.set(senderID, currentTime);
-            } else {
-                return;
-            }
-        }
 
-        // Expired hold সরানো
-        if (holdUntil !== 0 && holdUntil <= currentTime) {
-            orderHoldUntil.delete(senderID);
-            saveOrderHolds();
+                await sock.sendMessage(senderID, {
+                    text: `✅ *আপনার অর্ডার আমরা পেয়েছি!* 📥
 
-            if (userState.get(senderID) === 'order_submitted') {
-                userState.set(senderID, 'main_menu');
-            }
-        }
+আপনার অর্ডারের তথ্য অ্যাডমিনের যাচাইয়ের জন্য জমা হয়েছে। অ্যাডমিন আপনার UID ও পেমেন্টের তথ্য যাচাই করে WhatsApp-এ জানাবেন।
 
-        // Website order এলে একবার confirmation দিয়ে hold
-        if (isWebsiteOrder) {
-            orderHoldUntil.set(senderID, currentTime + twentyFourHours);
-            userState.set(senderID, 'order_submitted');
-            saveOrderHolds();
-            lastUserActivity.set(senderID, currentTime);
+⏳ পরবর্তী ২৪ ঘণ্টা এই চ্যাটে বটের অটো-রিপ্লাই বন্ধ থাকবে। এই সময়ে আপনার মেসেজগুলো অ্যাডমিন নিজে দেখতে পারবেন।
 
-            await sock.sendMessage(senderID, {
-                text: `✅ *আপনার অর্ডার আমরা পেয়েছি!* 📥
-
-আপনার অর্ডারের তথ্য অ্যাডমিনের কাছে পৌঁছেছে। অ্যাডমিন আপনার UID ও পেমেন্টের তথ্য যাচাই করে WhatsApp-এ জানাবেন।
-
-⏳ পরবর্তী ২৪ ঘণ্টা বট কোনো অটো-রিপ্লাই দেবে না। এই সময়ে আপনার মেসেজগুলো অ্যাডমিন নিজে দেখবেন।
-
-⚠️ পেমেন্ট যাচাই না হওয়া পর্যন্ত অর্ডার কনফার্ম নয়।
+⚠️ পেমেন্ট যাচাই না হওয়া পর্যন্ত অর্ডারটি কনফার্ম নয়।
 
 ধন্যবাদ! ❤️`
-            });
+                });
 
-            return;
-        }
-
-        // অর্ডার জমা হলে Menu ছাড়া কোনো auto-reply নয়
-        if (userState.get(senderID) === 'order_submitted') {
-            if (!isMenu) return;
-
-            orderHoldUntil.delete(senderID);
-            saveOrderHolds();
-            userState.delete(senderID);
-            lastUserActivity.set(senderID, currentTime);
-        }
-
-        // ইউজার যদি সাপোর্ট মোডে থাকে
-        if (supportUsers.has(senderID)) {
-            if (isMenu) {
-                supportUsers.delete(senderID);
-                userState.delete(senderID);
-            } else {
+                console.log(`✅ Order received from ${senderID}. Auto-reply paused for 24 hours.`);
                 return;
             }
-        }
 
-        // মূল মেনু / Welcome message
-        if (
-            isMenu ||
-            text === 'hi' ||
-            text === 'hello' ||
-            text === 'হাই' ||
-            text === 'হ্যালো' ||
-            lastTime === 0 ||
-            (currentTime - lastTime > twentyFourHours)
-        ) {
-            supportUsers.delete(senderID);
-            userState.set(senderID, 'main_menu');
-            lastUserActivity.set(senderID, currentTime);
+            // ইউজার সাপোর্ট মোডে থাকলে
+            if (supportUsers.has(senderID)) {
+                if (text === 'menu' || text === 'মেনু') {
+                    supportUsers.delete(senderID);
+                    userState.delete(senderID);
+                } else {
+                    return;
+                }
+            }
 
-            let welcomeText = `🎮 *FF ServicesPicks-এ আপনাকে স্বাগতম!* 🚀
+            // মূল মেনু / Welcome
+            if (
+                text === 'menu' ||
+                text === 'মেনু' ||
+                text === 'hi' ||
+                text === 'hello' ||
+                text === 'হাই' ||
+                text === 'হ্যালো' ||
+                lastTime === 0 ||
+                currentTime - lastTime > twentyFourHours
+            ) {
+                supportUsers.delete(senderID);
+                userState.set(senderID, 'main_menu');
+                lastUserActivity.set(senderID, currentTime);
+
+                let welcomeText = `🎮 *FF ServicesPicks-এ আপনাকে স্বাগতম!* 🚀
 
 🔥 *বাজারে সবচেয়ে কম দামে* আপনার ফ্রি ফায়ার প্রোফাইলকে আরও আকর্ষণীয় ও প্রিমিয়াম করতে আমাদের সাশ্রয়ী মাসিক ও মেয়াদী লাইক প্যাকেজগুলো দেখে নিতে পারেন। ♥️`;
 
-            if (lastTime !== 0 && (currentTime - lastTime > twentyFourHours)) {
-                welcomeText = `✨ *Welcome Back! দীর্ঘদিন পর আমাদের চ্যাটে আপনাকে আবার ফিরে পেয়ে খুব ভালো লাগলো!* 🥰
+                if (lastTime !== 0 && currentTime - lastTime > twentyFourHours) {
+                    welcomeText = `✨ *Welcome Back! দীর্ঘদিন পর আমাদের চ্যাটে আপনাকে আবার ফিরে পেয়ে খুব ভালো লাগলো!* 🥰
 
 সবাইয়ের চেয়ে অনেক কম দামে সেরা সার্ভিস দিতে আমরা সবসময় আপনার পাশে আছি। ♥️`;
-            }
+                }
 
-            await sock.sendMessage(senderID, {
-                text: `${welcomeText}
+                await sock.sendMessage(senderID, {
+                    text: `${welcomeText}
 
 🌐 *অফিশিয়াল ওয়েবসাইট:*
 https://ffserviceshub.github.io/FF-Like-ServicesPicks/
@@ -250,29 +260,29 @@ https://ffserviceshub.github.io/FF-Like-ServicesPicks/
 4️⃣ 🛡️ জরুরি নিরাপত্তা ও সাধারণ সতর্কতা
 5️⃣ 💬 অ্যাডমিনের সাথে সরাসরি কথা বলুন
 
-*💡 টিপস:* যেকোনো সময় মূল মেনুতে ফিরে আসতে চ্যাটে শুধু **"Menu"** লিখে পাঠান।`
-            });
+*💡 টিপস:* যেকোনো সময় মূল মেনুতে ফিরে আসতে চ্যাটে শুধু "Menu" লিখে পাঠান।`
+                });
 
-            return;
-        }
+                return;
+            }
 
-        // অপশন ১: প্যাকেজ ও দাম
-        if (
-            text === '1' ||
-            text.includes('package') ||
-            text.includes('like') ||
-            text.includes('প্যাকেজ') ||
-            text.includes('দাম')
-        ) {
-            userState.set(senderID, 'viewing_packages');
-            lastUserActivity.set(senderID, currentTime);
+            // অপশন ১: প্যাকেজ ও দাম
+            if (
+                text === '1' ||
+                text.includes('package') ||
+                text.includes('like') ||
+                text.includes('প্যাকেজ') ||
+                text.includes('দাম')
+            ) {
+                userState.set(senderID, 'viewing_packages');
+                lastUserActivity.set(senderID, currentTime);
 
-            await sock.sendMessage(senderID, {
-                text: `🔥 *FF ServicesPicks — মাসিক ও মেয়াদী লাইক প্যাকেজসমূহ*
+                await sock.sendMessage(senderID, {
+                    text: `🔥 *FF ServicesPicks — মাসিক ও মেয়াদী লাইক প্যাকেজসমূহ*
 
 ✨ *বিশেষ ঘোষণা:* বাজারের অন্যান্য সেবাদাতা প্রতিষ্ঠানের তুলনায় আমাদের প্যাকেজগুলোর দাম অনেক কম এবং সাশ্রয়ী! 💯
 
-👇 আপনার পছন্দের প্যাকেজটির সামনে থাকা কোডটি (যেমন: **p1**, **p2**, **p3**...) চ্যাটে লিখে পাঠিয়ে অর্ডার শুরু করুন:
+👇 আপনার পছন্দের প্যাকেজটির সামনে থাকা কোডটি (যেমন: p1, p2, p3...) চ্যাটে লিখে পাঠিয়ে অর্ডার শুরু করুন:
 
 p1️⃣ *Ultra Package* — দাম: ৳২৫০ | ডেইলি: ২০০+ লাইক ♥️ | মেয়াদ: ৩০ দিন
 p2️⃣ *60-Day Value* — দাম: ৳২২০ | ডেইলি: ৫০+ লাইক ♥️ | মেয়াদ: ৬০ দিন
@@ -286,44 +296,44 @@ p8️⃣ *💎 200+ Permanent* — দাম: ৳৫,০০০ | ডেইলি
 🌐 বিস্তারিত দেখতে ভিজিট করুন:
 https://ffserviceshub.github.io/FF-Like-ServicesPicks/
 
-↩️ মূল মেনুতে যেতে চ্যাটে **"Menu"** লিখে পাঠান!`
-            });
-
-            return;
-        }
-
-        // প্যাকেজ কোড
-        if (['p1', 'p2', 'p3', 'p4', 'p5', 'p6', 'p7', 'p8'].includes(text)) {
-            if (userState.get(senderID) !== 'viewing_packages') {
-                await sock.sendMessage(senderID, {
-                    text: `⚠️ *প্রথমে প্যাকেজ লিস্ট দেখে তারপর কোড দিন!*
-
-আপনি এখনো প্যাকেজ লিস্ট দেখেননি। প্রথমে চ্যাটে **1** লিখে বা **Menu** এ গিয়ে প্যাকেজ লিস্ট দেখে নিন, তারপর প্যাকেজ কোড (**p1** থেকে **p8**) লিখে পাঠাবেন।
-
-↩️ মেনু দেখতে চ্যাটে **"Menu"** লিখে পাঠান!`
+↩️ মূল মেনুতে যেতে চ্যাটে "Menu" লিখে পাঠান!`
                 });
 
                 return;
             }
 
-            lastUserActivity.set(senderID, currentTime);
+            // প্যাকেজ কোড
+            if (['p1', 'p2', 'p3', 'p4', 'p5', 'p6', 'p7', 'p8'].includes(text)) {
+                if (userState.get(senderID) !== 'viewing_packages') {
+                    await sock.sendMessage(senderID, {
+                        text: `⚠️ *প্রথমে প্যাকেজ লিস্ট দেখে তারপর কোড দিন!*
 
-            let pkgName = "";
-            let pkgPrice = "";
+প্রথমে চ্যাটে 1 লিখে প্যাকেজ লিস্ট দেখুন। তারপর p1 থেকে p8-এর মধ্যে পছন্দের কোড পাঠান।
 
-            if (text === 'p1') { pkgName = "Ultra Package (২০০+ লাইক, ৩০ দিন)"; pkgPrice = "৳২৫০"; }
-            else if (text === 'p2') { pkgName = "60-Day Value (৫০+ লাইক, ৬০ দিন)"; pkgPrice = "৳২২০"; }
-            else if (text === 'p3') { pkgName = "150+ Likes Package (১৫০+ লাইক, ৩০ দিন)"; pkgPrice = "৳২২০"; }
-            else if (text === 'p4') { pkgName = "60-Day Pro (৮০+ লাইক, ৬০ দিন)"; pkgPrice = "৳৩২০"; }
-            else if (text === 'p5') { pkgName = "Yearly Value (৫০+ লাইক, ৩৬৫ দিন)"; pkgPrice = "৳৮০০"; }
-            else if (text === 'p6') { pkgName = "50+ Likes Permanent (আজীবন)"; pkgPrice = "৳১,০৫০"; }
-            else if (text === 'p7') { pkgName = "Yearly Pro (৮০+ লাইক, ৩৬৫ দিন)"; pkgPrice = "৳১,২০০"; }
-            else if (text === 'p8') { pkgName = "200+ Likes Permanent (আজীবন)"; pkgPrice = "৳৫,০০০"; }
+↩️ মেনু দেখতে "Menu" লিখুন।`
+                    });
+                    return;
+                }
 
-            userState.set(senderID, 'awaiting_payment_info');
+                lastUserActivity.set(senderID, currentTime);
 
-            await sock.sendMessage(senderID, {
-                text: `🎉 *অভিনন্দন! আপনার পছন্দের প্যাকেজটি সফলভাবে সিলেক্ট হয়েছে।*
+                const packages = {
+                    p1: ['Ultra Package (২০০+ লাইক, ৩০ দিন)', '৳২৫০'],
+                    p2: ['60-Day Value (৫০+ লাইক, ৬০ দিন)', '৳২২০'],
+                    p3: ['150+ Likes Package (১৫০+ লাইক, ৩০ দিন)', '৳২২০'],
+                    p4: ['60-Day Pro (৮০+ লাইক, ৬০ দিন)', '৳৩২০'],
+                    p5: ['Yearly Value (৫০+ লাইক, ৩৬৫ দিন)', '৳৮০০'],
+                    p6: ['50+ Likes Permanent (আজীবন)', '৳১,০৫০'],
+                    p7: ['Yearly Pro (৮০+ লাইক, ৩৬৫ দিন)', '৳১,২০০'],
+                    p8: ['200+ Likes Permanent (আজীবন)', '৳৫,০০০']
+                };
+
+                const [pkgName, pkgPrice] = packages[text];
+
+                userState.set(senderID, 'awaiting_payment_info');
+
+                await sock.sendMessage(senderID, {
+                    text: `🎉 *অভিনন্দন! আপনার পছন্দের প্যাকেজটি সফলভাবে সিলেক্ট হয়েছে।*
 
 📦 *নির্বাচিত প্যাকেজ:* ${pkgName}
 💰 *মূল্য:* ${pkgPrice} *(বাজারে সবচেয়ে সাশ্রয়ী ও কম দাম!)*
@@ -333,202 +343,166 @@ https://ffserviceshub.github.io/FF-Like-ServicesPicks/
 🛠️ *অর্ডার কনফার্ম করার ধাপসমূহ:*
 
 💳 *ধাপ ১: বিকাশ (bKash) পেমেন্ট*
-আমাদের নিচের পার্সোনাল নম্বরে সঠিক টাকা *Send Money* করুন:
+আমাদের নিচের পার্সোনাল নম্বরে সঠিক টাকা Send Money করুন:
 📱 *bKash Personal:* \`01733054857\`
 
 ⚠️ *ধাপ ২: তথ্য পাঠানো*
-পরের মেসেজটি খুব সহজে কপি করে আপনার তথ্য বসিয়ে চ্যাটে পাঠিয়ে দিন! 🚀`
-            });
+পরের মেসেজটি কপি করে আপনার তথ্য বসিয়ে চ্যাটে পাঠিয়ে দিন! 🚀`
+                });
 
-            await sock.sendMessage(senderID, {
-                text: `Package: ${pkgName}
+                await sock.sendMessage(senderID, {
+                    text: `Package: ${pkgName}
 Price: ${pkgPrice}
 UID: [এখানে আপনার গেমের UID দিন]
 TrxID/Number: [এখানে TrxID বা বিকাশ নম্বর দিন]`
-            });
-
-            return;
-        }
-
-        // অর্ডার তথ্য যাচাই ও confirmation
-        if (userState.get(senderID) === 'awaiting_payment_info') {
-            const uidMatch = messageText.match(/UID\s*:\s*([^\r\n]+)/i);
-            const trxMatch = messageText.match(/TrxID\s*\/\s*Number\s*:\s*([^\r\n]+)/i);
-
-            const uid = uidMatch?.[1]?.trim() || '';
-            const trx = trxMatch?.[1]?.trim() || '';
-
-            const isPlaceholder = value => {
-                const normalized = value.toLowerCase();
-                return (
-                    !normalized ||
-                    normalized.startsWith('[') ||
-                    normalized.includes('এখানে') ||
-                    normalized.includes('আপনার') ||
-                    normalized.includes('uid দিন') ||
-                    normalized.includes('trxid') && normalized.includes('দিন') ||
-                    normalized.length < 3
-                );
-            };
-
-            if (
-                !uidMatch ||
-                !trxMatch ||
-                isPlaceholder(uid) ||
-                isPlaceholder(trx)
-            ) {
-                await sock.sendMessage(senderID, {
-                    text: `⚠️ *আপনার অর্ডারের তথ্য সম্পূর্ণ হয়নি!*
-
-দয়া করে UID ও TrxID/বিকাশ নম্বর পূরণ করে পাঠান।
-
-Package: প্যাকেজের নাম
-Price: প্যাকেজের দাম
-UID: আপনার গেমের UID
-TrxID/Number: আপনার TrxID বা বিকাশ নম্বর`
                 });
 
                 return;
             }
 
-            // Order accepted: confirmation and 24-hour pause
-            userState.set(senderID, 'order_submitted');
-            orderHoldUntil.set(senderID, currentTime + twentyFourHours);
-            saveOrderHolds();
-            lastUserActivity.set(senderID, currentTime);
+            // প্যাকেজ সিলেক্ট করার পর অন্য সাধারণ মেসেজে ভুল confirmation যেন না যায়।
+            // সঠিক order template উপরের isOrderMessage() অংশে ধরা হবে।
+            if (userState.get(senderID) === 'awaiting_payment_info') {
+                lastUserActivity.set(senderID, currentTime);
 
-            await sock.sendMessage(senderID, {
-                text: `✅ *আপনার অর্ডার ও পেমেন্টের তথ্য সফলভাবে আমাদের কাছে জমা হয়েছে!* 📥
+                await sock.sendMessage(senderID, {
+                    text: `⚠️ *অর্ডারের তথ্য সম্পূর্ণ হয়নি।*
 
-অ্যাডমিন খুব শীঘ্রই আপনার বিকাশ পেমেন্ট ও গেমের UID যাচাই করে আপনার ইন-গেম লাইক সার্ভিসটি কনফার্ম করে দেবেন। ধৈর্য ধরে সাথে থাকার জন্য ধন্যবাদ! ❤️
+দয়া করে নিচের চারটি তথ্যসহ মেসেজটি পাঠান:
 
-⏳ পরবর্তী ২৪ ঘণ্টা বট কোনো অটো-রিপ্লাই দেবে না।
+Package: [প্যাকেজের নাম]
+Price: [প্যাকেজের দাম]
+UID: [আপনার গেমের UID]
+TrxID/Number: [TrxID বা বিকাশ নম্বর]
 
-⚠️ পেমেন্ট যাচাই না হওয়া পর্যন্ত অর্ডার কনফার্ম নয়।`
-            });
+এই ফরম্যাটে তথ্য পাঠালে অর্ডার গ্রহণের confirmation পাবেন।`
+                });
 
-            return;
-        }
+                return;
+            }
 
-        // অপশন ২: পেমেন্ট পদ্ধতি
-        if (
-            text === '2' ||
-            text.includes('payment') ||
-            text.includes('bkash') ||
-            text.includes('বিকাশ') ||
-            text.includes('টাকা')
-        ) {
-            userState.set(senderID, 'main_menu');
-            lastUserActivity.set(senderID, currentTime);
+            // অপশন ২: পেমেন্ট পদ্ধতি
+            if (
+                text === '2' ||
+                text.includes('payment') ||
+                text.includes('bkash') ||
+                text.includes('বিকাশ') ||
+                text.includes('টাকা')
+            ) {
+                userState.set(senderID, 'main_menu');
+                lastUserActivity.set(senderID, currentTime);
 
-            await sock.sendMessage(senderID, {
-                text: `💳 *বিকাশ (bKash) পেমেন্ট নির্দেশিকা* 🌟
+                await sock.sendMessage(senderID, {
+                    text: `💳 *বিকাশ (bKash) পেমেন্ট নির্দেশিকা* 🌟
 
-আমাদের পার্সোনাল নম্বরে সঠিক টাকা *Send Money* করুন:
+আমাদের পার্সোনাল নম্বরে সঠিক টাকা Send Money করুন:
 📱 *bKash Personal:* \`01733054857\`
 
 ⚠️ *টাকা পাঠানোর পর তথ্য পাঠানোর নিয়ম:*
-নিচের মেসেজটি কপি করে আপনার তথ্য দিয়ে চ্যাটে পাঠিয়ে দিন:
+নিচের ফরম্যাটটি কপি করে আপনার তথ্য দিয়ে পাঠান:
 
 Package: [আপনার পছন্দের প্যাকেজের নাম]
 Price: [প্যাকেজের দাম]
 UID: [এখানে আপনার গেমের UID দিন]
-TrxID/Number: [এখানে TrxID বা বিকাশ নম্বর দিন] ✅
+TrxID/Number: [এখানে TrxID বা বিকাশ নম্বর দিন]
 
-↩️ মূল মেনুতে ফিরে যেতে চ্যাটে **"Menu"** লিখে পাঠান!`
-            });
+↩️ মূল মেনুতে ফিরে যেতে "Menu" লিখুন।`
+                });
 
-            return;
-        }
+                return;
+            }
 
-        // অপশন ৩: অর্ডার করার নিয়ম
-        if (
-            text === '3' ||
-            text.includes('rules') ||
-            text.includes('অর্ডার') ||
-            text.includes('নিয়ম')
-        ) {
-            userState.set(senderID, 'main_menu');
-            lastUserActivity.set(senderID, currentTime);
+            // অপশন ৩: অর্ডার করার নিয়ম
+            if (
+                text === '3' ||
+                text.includes('rules') ||
+                text.includes('অর্ডার') ||
+                text.includes('নিয়ম')
+            ) {
+                userState.set(senderID, 'main_menu');
+                lastUserActivity.set(senderID, currentTime);
 
-            await sock.sendMessage(senderID, {
-                text: `📋 *খুব সহজেই যেভাবে অর্ডার করবেন:*
+                await sock.sendMessage(senderID, {
+                    text: `📋 *খুব সহজেই যেভাবে অর্ডার করবেন:*
 
-১️⃣ প্রথমে চ্যাটে **1** লিখে আমাদের প্যাকেজ লিস্ট দেখে নিন।
-২️⃣ আপনার পছন্দের প্যাকেজ কোডটি (যেমন: **p1** থেকে **p8**) চ্যাটে পাঠান।
-৩️⃣ বিকাশ পার্সোনাল নম্বরে (\`01733054857\`) সঠিক টাকা *Send Money* করুন।
-৪️⃣ এরপর নিচের ফরম্যাটটি কপি করে আপনার তথ্য দিয়ে চ্যাটে পাঠিয়ে দিন:
+১️⃣ প্রথমে চ্যাটে 1 লিখে প্যাকেজ লিস্ট দেখুন।
+২️⃣ পছন্দের প্যাকেজ কোড (p1 থেকে p8) পাঠান।
+৩️⃣ বিকাশ পার্সোনাল নম্বরে (\`01733054857\`) সঠিক টাকা Send Money করুন।
+৪️⃣ এরপর নিচের ফরম্যাটটি কপি করে তথ্য দিয়ে পাঠান:
 
 Package: [প্যাকেজের নাম]
 Price: [প্যাকেজের দাম]
 UID: [UID দিন]
-TrxID/Number: [TrxID বা বিকাশ নম্বর দিন] 🚀
+TrxID/Number: [TrxID বা বিকাশ নম্বর দিন]
 
-অ্যাডমিন যাচাই করে আপনার অর্ডার কনফার্ম করে দেবেন! ✅
+অর্ডার মেসেজ পাঠালে বট confirmation দেবে। অ্যাডমিন পেমেন্ট যাচাই করে অর্ডার কনফার্ম করবেন। ✅
 
-↩️ মূল মেনুতে ফিরে যেতে চ্যাটে **"Menu"** লিখে পাঠান!`
-            });
+↩️ মূল মেনুতে যেতে "Menu" লিখুন।`
+                });
 
-            return;
-        }
+                return;
+            }
 
-        // অপশন ৪: নিরাপত্তা সতর্কতা
-        if (
-            text === '4' ||
-            text.includes('faq') ||
-            text.includes('safety') ||
-            text.includes('সতর্কতা')
-        ) {
-            userState.set(senderID, 'main_menu');
-            lastUserActivity.set(senderID, currentTime);
+            // অপশন ৪: নিরাপত্তা
+            if (
+                text === '4' ||
+                text.includes('faq') ||
+                text.includes('safety') ||
+                text.includes('সতর্কতা')
+            ) {
+                userState.set(senderID, 'main_menu');
+                lastUserActivity.set(senderID, currentTime);
 
-            await sock.sendMessage(senderID, {
-                text: `🛡️ *জরুরি নিরাপত্তা ও সাধারণ সতর্কতা:*
+                await sock.sendMessage(senderID, {
+                    text: `🛡️ *জরুরি নিরাপত্তা ও সাধারণ সতর্কতা:*
 ❌ গেম পাসওয়ার্ড বা OTP কাউকে দেবেন না। FF ServicesPicks কখনো পাসওয়ার্ড চায় না। লেনদেনের সময় সঠিক UID প্রদান করুন।
 
-↩️ মূল মেনুতে যেতে চ্যাটে **"Menu"** লিখে পাঠান!`
-            });
+↩️ মেনুতে যেতে "Menu" লিখুন।`
+                });
 
-            return;
-        }
+                return;
+            }
 
-        // অপশন ৫: কাস্টমার সাপোর্ট
-        if (
-            text === '5' ||
-            text.includes('support') ||
-            text.includes('admin') ||
-            text.includes('সাহায্য')
-        ) {
-            supportUsers.add(senderID);
-            lastUserActivity.set(senderID, currentTime);
+            // অপশন ৫: কাস্টমার সাপোর্ট
+            if (
+                text === '5' ||
+                text.includes('support') ||
+                text.includes('admin') ||
+                text.includes('সাহায্য')
+            ) {
+                supportUsers.add(senderID);
+                lastUserActivity.set(senderID, currentTime);
 
-            await sock.sendMessage(senderID, {
-                text: `💬 *অ্যাডমিন ও কাস্টমার সাপোর্ট*
+                await sock.sendMessage(senderID, {
+                    text: `💬 *অ্যাডমিন ও কাস্টমার সাপোর্ট*
 আপনার মেসেজটি এখানে লিখে পাঠান। খুব শীঘ্রই অ্যাডমিন আপনার সাথে সরাসরি কথা বলবেন! ❤️`
-            });
+                });
 
-            return;
-        }
+                return;
+            }
 
-        // ভুল মেসেজ: ১ ঘণ্টার টাইমার
-        const lastErrorTime = lastErrorActivity.get(senderID) || 0;
+            // ভুল মেসেজ: ১ ঘণ্টার anti-spam timer
+            const lastErrorTime = lastErrorActivity.get(senderID) || 0;
 
-        if (currentTime - lastErrorTime > oneHour) {
-            lastErrorActivity.set(senderID, currentTime);
-            lastUserActivity.set(senderID, currentTime);
+            if (currentTime - lastErrorTime > oneHour) {
+                lastErrorActivity.set(senderID, currentTime);
+                lastUserActivity.set(senderID, currentTime);
 
-            await sock.sendMessage(senderID, {
-                text: `❌ দুঃখিত, আপনার কমান্ডটি বুঝতে পারিনি।
+                await sock.sendMessage(senderID, {
+                    text: `❌ দুঃখিত, আপনার কমান্ডটি বুঝতে পারিনি।
 
-• মেয়াদি প্যাকেজগুলো দেখতে ও সবকিছু জানতে টাইপ করুন: **Menu** বা **1**
-• কীভাবে অর্ডার করবেন জানতে টাইপ করুন: **3**
-• জরুরি সতর্কতা জানতে টাইপ করুন: **4**
-• অ্যাডমিনের সাথে সরাসরি কথা বলতে টাইপ করুন: **5**`
-            });
+• প্যাকেজ দেখতে: Menu বা 1
+• অর্ডার করার নিয়ম: 3
+• নিরাপত্তা সতর্কতা: 4
+• অ্যাডমিনের সাথে কথা বলতে: 5`
+                });
+            }
+        } catch (err) {
+            console.error('Message handler error:', err);
         }
     });
 }
 
 connectToWhatsApp().catch(err => {
-    console.error('WhatsApp startup error:', err);
+    console.error('WhatsApp connection error:', err);
 });
