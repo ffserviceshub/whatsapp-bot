@@ -21,6 +21,37 @@ const userState = new Map(); // ইউজার কোথায় আছে তা
 const lastUserActivity = new Map();
 const lastErrorActivity = new Map();
 
+// Website order hold: persistent 24-hour auto-reply pause
+const orderHoldFile = 'order_hold_state.json';
+const orderHoldUntil = new Map();
+
+try {
+    if (fs.existsSync(orderHoldFile)) {
+        const savedHolds = JSON.parse(
+            fs.readFileSync(orderHoldFile, 'utf8')
+        );
+
+        for (const [sender, expiry] of Object.entries(savedHolds)) {
+            if (Number(expiry) > Date.now()) {
+                orderHoldUntil.set(sender, Number(expiry));
+            }
+        }
+    }
+} catch (err) {
+    console.error('Could not load order hold state:', err);
+}
+
+function saveOrderHolds() {
+    try {
+        fs.writeFileSync(
+            orderHoldFile,
+            JSON.stringify(Object.fromEntries(orderHoldUntil), null, 2)
+        );
+    } catch (err) {
+        console.error('Could not save order hold state:', err);
+    }
+}
+
 async function connectToWhatsApp() {
     const authFolder = 'auth_info_baileys';
     const { state, saveCreds } = await useMultiFileAuthState(authFolder);
@@ -46,19 +77,19 @@ async function connectToWhatsApp() {
 
     sock.ev.on('connection.update', async (update) => {
         const { connection, lastDisconnect } = update;
-        
+
         if (connection === 'close') {
             const statusCode = (lastDisconnect.error)?.output?.statusCode;
             const shouldReconnect = statusCode !== DisconnectReason.loggedOut;
             console.log('Connection closed, reconnecting...', shouldReconnect);
-            
+
             if (statusCode === DisconnectReason.loggedOut || statusCode === 401) {
                 console.log('Session expired. Cleaning old session cache...');
                 if (fs.existsSync(authFolder)) {
                     fs.rmSync(authFolder, { recursive: true, force: true });
                 }
             }
-            
+
             if (shouldReconnect) {
                 connectToWhatsApp();
             }
@@ -84,6 +115,45 @@ async function connectToWhatsApp() {
         const oneHour = 60 * 60 * 1000; // ১ ঘণ্টা সময় মিলিসেকেন্ডে
         const twentyFourHours = 24 * oneHour;
 
+        // Detect website order and pause bot replies for 24 hours
+        const isWebsiteOrder =
+            text.includes('please verify my order details') &&
+            text.includes('order details') &&
+            text.includes('free fire uid');
+
+        const holdUntil = orderHoldUntil.get(senderID) || 0;
+
+        // If this customer is already on hold, do not auto-reply
+        if (holdUntil > currentTime) {
+            return;
+        }
+
+        // Remove expired hold
+        if (holdUntil !== 0 && holdUntil <= currentTime) {
+            orderHoldUntil.delete(senderID);
+            saveOrderHolds();
+        }
+
+        // Acknowledge a new website order once
+        if (isWebsiteOrder) {
+            orderHoldUntil.set(senderID, currentTime + twentyFourHours);
+            saveOrderHolds();
+
+            await sock.sendMessage(senderID, {
+                text: `✅ *আপনার অর্ডার আমরা পেয়েছি!* 📥
+
+আপনার অর্ডারের তথ্য অ্যাডমিনের কাছে পৌঁছেছে। অ্যাডমিন আপনার UID ও পেমেন্টের তথ্য যাচাই করে WhatsApp-এ জানাবেন।
+
+⏳ পরবর্তী ২৪ ঘণ্টা বট কোনো অটো-রিপ্লাই দেবে না। এই সময়ে আপনার মেসেজগুলো অ্যাডমিন নিজে দেখবেন।
+
+⚠️ পেমেন্ট যাচাই না হওয়া পর্যন্ত অর্ডার কনফার্ম নয়।
+
+ধন্যবাদ! ❤️`
+            });
+
+            return;
+        }
+
         // ইউজার যদি সাপোর্ট মোডে থাকে
         if (supportUsers.has(senderID)) {
             if (text === 'menu' || text === 'মেনু') {
@@ -101,7 +171,7 @@ async function connectToWhatsApp() {
             lastUserActivity.set(senderID, currentTime);
 
             let welcomeText = `🎮 *FF ServicesPicks-এ আপনাকে স্বাগতম!* 🚀\n\n🔥 *বাজারে সবচেয়ে কম দামে* আপনার ফ্রি ফায়ার প্রোফাইলকে আরও আকর্ষণীয় ও প্রিমিয়াম করতে আমাদের সাশ্রয়ী মাসিক ও মেয়াদী লাইক প্যাকেজগুলো দেখে নিতে পারেন। ♥️`;
-            
+
             if (lastTime !== 0 && (currentTime - lastTime > twentyFourHours)) {
                 welcomeText = `✨ *Welcome Back! দীর্ঘদিন পর আমাদের চ্যাটে আপনাকে আবার ফিরে পেয়ে খুব ভালো লাগলো!* 🥰\n\nসবাইয়ের চেয়ে অনেক কম দামে সেরা সার্ভিস দিতে আমরা সবসময় আপনার পাশে আছি। ♥️`;
             }
@@ -116,7 +186,7 @@ async function connectToWhatsApp() {
         if (text === '1' || text.includes('package') || text.includes('like') || text.includes('প্যাকেজ') || text.includes('দাম')) {
             userState.set(senderID, 'viewing_packages'); 
             lastUserActivity.set(senderID, currentTime);
-            
+
             await sock.sendMessage(senderID, { 
                 text: `🔥 *FF ServicesPicks — মাসিক ও মেয়াদী লাইক প্যাকেজসমূহ* 
 
@@ -151,7 +221,7 @@ p8️⃣ *💎 200+ Permanent* — দাম: ৳৫,০০০ | ডেইলি
             }
 
             lastUserActivity.set(senderID, currentTime);
-            
+
             let pkgName = "";
             let pkgPrice = "";
             if (text === 'p1') { pkgName = "Ultra Package (২০০+ লাইক, ৩০ দিন)"; pkgPrice = "৳২৫০"; }
