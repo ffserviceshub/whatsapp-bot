@@ -79,7 +79,11 @@ function isOrderMessage(messageText) {
     const websiteOrder =
         text.includes('please verify my order details') &&
         text.includes('order details') &&
-        text.includes('free fire uid');
+        /free fire\s*uid\s*:/i.test(messageText) &&
+        /payment method\s*:/i.test(messageText) &&
+        /amount sent\s*:/i.test(messageText) &&
+        /transaction id\s*\(\s*trxid\s*\)\s*:/i.test(messageText) &&
+        /sender number\s*:/i.test(messageText);
 
     // WhatsApp-এ পাঠানো order template-এর জন্য
     const hasPackage = /package\s*:/i.test(messageText);
@@ -255,7 +259,7 @@ https://ffserviceshub.github.io/FF-Like-ServicesPicks/
 👇 নিচের অপশনগুলোর সামনে থাকা *নম্বরটি* চ্যাটে লিখে পাঠিয়ে দিন:
 
 1️⃣ 🔥 মেয়াদি লাইক প্যাকেজ ও সাশ্রয়ী মূল্য
-2️⃣ 💳 বিকাশ (bKash) পেমেন্ট করার নিয়ম
+2️⃣ 💳 bKash / Nagad পেমেন্ট করার নিয়ম
 3️⃣ 📋 খুব সহজে যেভাবে অর্ডার করবেন
 4️⃣ ❓ সাধারণ কিছু প্রশ্ন (FAQ)
 5️⃣ 💬 অ্যাডমিনের সাথে সরাসরি কথা বলুন
@@ -342,9 +346,12 @@ https://ffserviceshub.github.io/FF-Like-ServicesPicks/
 
 🛠️ *অর্ডার কনফার্ম করার ধাপসমূহ:*
 
-💳 *ধাপ ১: বিকাশ (bKash) পেমেন্ট*
-আমাদের নিচের পার্সোনাল নম্বরে সঠিক টাকা Send Money করুন:
-📱 *bKash Personal:* \`01733054857\`
+💳 *ধাপ ১: পেমেন্টের মাধ্যম বেছে নিন*
+নির্বাচিত প্যাকেজের সঠিক টাকা নিচের যেকোনো একটি নম্বরে Send Money করুন:
+📱 *bKash:* \`01733054857\`
+📱 *Nagad:* \`01951722651\`
+
+টাকা পাঠানোর আগে payment method, নম্বর ও amount মিলিয়ে নিন।
 
 ⚠️ *ধাপ ২: তথ্য পাঠানো*
 পরের মেসেজটি কপি করে আপনার তথ্য বসিয়ে চ্যাটে পাঠিয়ে দিন! 🚀`
@@ -354,7 +361,8 @@ https://ffserviceshub.github.io/FF-Like-ServicesPicks/
                     text: `Package: ${pkgName}
 Price: ${pkgPrice}
 UID: [এখানে আপনার গেমের UID দিন]
-TrxID/Number: [এখানে TrxID বা বিকাশ নম্বর দিন]`
+Payment Method: [bKash/Nagad]
+TrxID/Number: [TrxID অথবা যে bKash/Nagad নম্বর থেকে টাকা পাঠিয়েছেন]`
                 });
 
                 return;
@@ -386,17 +394,20 @@ TrxID/Number: [TrxID বা বিকাশ নম্বর]
                 text === '2' ||
                 text.includes('payment') ||
                 text.includes('bkash') ||
+                text.includes('nagad') ||
                 text.includes('বিকাশ') ||
+                text.includes('নগদ') ||
                 text.includes('টাকা')
             ) {
                 userState.set(senderID, 'main_menu');
                 lastUserActivity.set(senderID, currentTime);
 
                 await sock.sendMessage(senderID, {
-                    text: `💳 *বিকাশ (bKash) পেমেন্ট নির্দেশিকা* 🌟
+                    text: `💳 *bKash / Nagad পেমেন্ট নির্দেশিকা* 🌟
 
-আমাদের পার্সোনাল নম্বরে সঠিক টাকা Send Money করুন:
-📱 *bKash Personal:* \`01733054857\`
+আপনার পছন্দের মাধ্যম বেছে নিয়ে নির্বাচিত প্যাকেজের সঠিক টাকা Send Money করুন:
+📱 *bKash:* \`01733054857\`
+📱 *Nagad:* \`01951722651\`
 
 ⚠️ *টাকা পাঠানোর পর তথ্য পাঠানোর নিয়ম:*
 নিচের ফরম্যাটটি কপি করে আপনার তথ্য দিয়ে পাঠান:
@@ -404,7 +415,8 @@ TrxID/Number: [TrxID বা বিকাশ নম্বর]
 Package: [আপনার পছন্দের প্যাকেজের নাম]
 Price: [প্যাকেজের দাম]
 UID: [এখানে আপনার গেমের UID দিন]
-TrxID/Number: [এখানে TrxID বা বিকাশ নম্বর দিন]
+Payment Method: [bKash/Nagad]
+TrxID/Number: [TrxID অথবা যে bKash/Nagad নম্বর থেকে টাকা পাঠিয়েছেন]
 
 ↩️ মূল মেনুতে ফিরে যেতে "Menu" লিখুন।`
                 });
@@ -427,7 +439,7 @@ TrxID/Number: [এখানে TrxID বা বিকাশ নম্বর দ�
 
 ১️⃣ প্রথমে চ্যাটে 1 লিখে প্যাকেজ লিস্ট দেখুন।
 ২️⃣ পছন্দের প্যাকেজ কোড (p1 থেকে p8) পাঠান।
-৩️⃣ বিকাশ পার্সোনাল নম্বরে (\`01733054857\`) সঠিক টাকা Send Money করুন।
+৩️⃣ bKash (\`01733054857\`) অথবা Nagad (\`01951722651\`)—যে মাধ্যমে পেমেন্ট করবেন, সেই নম্বরে সঠিক টাকা Send Money করুন।।
 ৪️⃣ এরপর নিচের ফরম্যাটটি কপি করে তথ্য দিয়ে পাঠান:
 
 Package: [প্যাকেজের নাম]
@@ -465,12 +477,12 @@ TrxID/Number: [TrxID বা বিকাশ নম্বর দিন]
 না। Free Fire UID-তে শুধু সংখ্যা দিতে হবে—কোনো letter, space বা symbol নয়। UID ৫–২০ ডিজিটের হতে হবে। Submit করার আগে UID ভালোভাবে মিলিয়ে নিন।
 
 💳 *কীভাবে পেমেন্ট করব?*
-01733054857 নম্বরে bKash Send Money করুন। টাকা পাঠানোর আগে নম্বর ও amount যাচাই করুন।
+bKash (\`01733054857\`) অথবা Nagad (\`01951722651\`)—আপনার পছন্দের মাধ্যমে নির্বাচিত প্যাকেজের সঠিক amount Send Money করুন। টাকা পাঠানোর আগে payment method, নম্বর ও amount যাচাই করুন।।
 
 ✅ *অর্ডার কখন confirm হবে?*
 পেমেন্ট ও অর্ডারের তথ্য আমরা হাতে যাচাই করে WhatsApp-এ confirmation দিলে অর্ডার confirm হবে।
 
-🔐 *নিরাপত্তা টিপস:* গেম পাসওয়ার্ড বা OTP কাউকে দেবেন না। FF ServicesPicks কখনো আপনার পাসওয়ার্ড চায় না।
+🔐 *নিরাপত্তা টিপস:* Game password, account password, bKash/Nagad PIN বা OTP কাউকে দেবেন না। FF ServicesPicks কখনো এগুলো চায় না।।
 
 ↩️ মেনুতে যেতে "Menu" লিখুন।`
                 });
