@@ -376,12 +376,13 @@ TrxID/Number: [TrxID অথবা যে bKash/Nagad নম্বর থেক�
                 await sock.sendMessage(senderID, {
                     text: `⚠️ *অর্ডারের তথ্য সম্পূর্ণ হয়নি।*
 
-দয়া করে নিচের চারটি তথ্যসহ মেসেজটি পাঠান:
+দয়া করে নিচের তথ্যগুলোসহ মেসেজটি পাঠান:
 
 Package: [প্যাকেজের নাম]
 Price: [প্যাকেজের দাম]
 UID: [আপনার গেমের UID]
-TrxID/Number: [TrxID বা বিকাশ নম্বর]
+Payment Method: [bKash/Nagad]
+TrxID/Number: [TrxID অথবা যে bKash/Nagad নম্বর থেকে টাকা পাঠিয়েছেন]
 
 এই ফরম্যাটে তথ্য পাঠালে অর্ডার গ্রহণের confirmation পাবেন।`
                 });
@@ -439,13 +440,14 @@ TrxID/Number: [TrxID অথবা যে bKash/Nagad নম্বর থেক�
 
 ১️⃣ প্রথমে চ্যাটে 1 লিখে প্যাকেজ লিস্ট দেখুন।
 ২️⃣ পছন্দের প্যাকেজ কোড (p1 থেকে p8) পাঠান।
-৩️⃣ bKash (\`01733054857\`) অথবা Nagad (\`01951722651\`)—যে মাধ্যমে পেমেন্ট করবেন, সেই নম্বরে সঠিক টাকা Send Money করুন।।
+৩️⃣ bKash (\`01733054857\`) অথবা Nagad (\`01951722651\`)—যে মাধ্যমে পেমেন্ট করবেন, সেই নম্বরে সঠিক টাকা Send Money করুন।
 ৪️⃣ এরপর নিচের ফরম্যাটটি কপি করে তথ্য দিয়ে পাঠান:
 
 Package: [প্যাকেজের নাম]
 Price: [প্যাকেজের দাম]
 UID: [UID দিন]
-TrxID/Number: [TrxID বা বিকাশ নম্বর দিন]
+Payment Method: [bKash/Nagad]
+TrxID/Number: [TrxID অথবা যে bKash/Nagad নম্বর থেকে টাকা পাঠিয়েছেন]
 
 অর্ডার মেসেজ পাঠালে বট confirmation দেবে। অ্যাডমিন পেমেন্ট যাচাই করে অর্ডার কনফার্ম করবেন। ✅
 
@@ -477,12 +479,12 @@ TrxID/Number: [TrxID বা বিকাশ নম্বর দিন]
 না। Free Fire UID-তে শুধু সংখ্যা দিতে হবে—কোনো letter, space বা symbol নয়। UID ৫–২০ ডিজিটের হতে হবে। Submit করার আগে UID ভালোভাবে মিলিয়ে নিন।
 
 💳 *কীভাবে পেমেন্ট করব?*
-bKash (\`01733054857\`) অথবা Nagad (\`01951722651\`)—আপনার পছন্দের মাধ্যমে নির্বাচিত প্যাকেজের সঠিক amount Send Money করুন। টাকা পাঠানোর আগে payment method, নম্বর ও amount যাচাই করুন।।
+bKash (\`01733054857\`) অথবা Nagad (\`01951722651\`)—আপনার পছন্দের মাধ্যমে নির্বাচিত প্যাকেজের সঠিক amount Send Money করুন। টাকা পাঠানোর আগে payment method, নম্বর ও amount যাচাই করুন।
 
 ✅ *অর্ডার কখন confirm হবে?*
 পেমেন্ট ও অর্ডারের তথ্য আমরা হাতে যাচাই করে WhatsApp-এ confirmation দিলে অর্ডার confirm হবে।
 
-🔐 *নিরাপত্তা টিপস:* Game password, account password, bKash/Nagad PIN বা OTP কাউকে দেবেন না। FF ServicesPicks কখনো এগুলো চায় না।।
+🔐 *নিরাপত্তা টিপস:* Game password, account password, bKash/Nagad PIN বা OTP কাউকে দেবেন না। FF ServicesPicks কখনো এগুলো চায় না।
 
 ↩️ মেনুতে যেতে "Menu" লিখুন।`
                 });
