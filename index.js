@@ -254,7 +254,7 @@ async function connectToWhatsApp() {
                     text: `${welcomeText}
 
 🌐 *অফিশিয়াল ওয়েবসাইট:*
-https://ffserviceshub.github.io/FF-Like-ServicesPicks/
+https://ff-like-sp.pages.dev/
 
 👇 নিচের অপশনগুলোর সামনে থাকা *নম্বরটি* চ্যাটে লিখে পাঠিয়ে দিন:
 
@@ -298,7 +298,7 @@ p7️⃣ *🌟 Yearly Pro* — দাম: ৳১,২০০ | ডেইলি: �
 p8️⃣ *💎 200+ Permanent* — দাম: ৳৫,০০০ | ডেইলি: ২০০+ লাইক ♥️ | মেয়াদ: আজীবন
 
 🌐 বিস্তারিত দেখতে ভিজিট করুন:
-https://ffserviceshub.github.io/FF-Like-ServicesPicks/
+https://ff-like-sp.pages.dev/
 
 ↩️ মূল মেনুতে যেতে চ্যাটে "Menu" লিখে পাঠান!`
                 });
