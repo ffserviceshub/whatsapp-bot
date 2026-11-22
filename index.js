@@ -253,8 +253,6 @@ async function connectToWhatsApp() {
                 await sock.sendMessage(senderID, {
                     text: `${welcomeText}
 
-🌐 *অফিশিয়াল ওয়েবসাইট:*
-https://fflike.pages.dev/
 
 👇 নিচের অপশনগুলোর সামনে থাকা *নম্বরটি* চ্যাটে লিখে পাঠিয়ে দিন:
 
@@ -297,8 +295,6 @@ p6️⃣ *👑 50+ Permanent* — দাম: ৳১,০৫০ | ডেইলি:
 p7️⃣ *🌟 Yearly Pro* — দাম: ৳১,২০০ | ডেইলি: ৮০+ লাইক ♥️ | মেয়াদ: ৩৬৫ দিন
 p8️⃣ *💎 200+ Permanent* — দাম: ৳৫,০০০ | ডেইলি: ২০০+ লাইক ♥️ | মেয়াদ: আজীবন
 
-🌐 বিস্তারিত দেখতে ভিজিট করুন:
-https://fflike.pages.dev/
 
 ↩️ মূল মেনুতে যেতে চ্যাটে "Menu" লিখে পাঠান!`
                 });
