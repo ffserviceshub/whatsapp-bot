@@ -293,42 +293,42 @@ async function connectToWhatsApp() {
 📦 *লাইক প্যাকেজসমূহ*
 ━━━━━━━━━━━━━━━━━━
 
-1️⃣ *Ultra Package (p1)*
+1️⃣ *Ultra Auto Boost (200+ Likes) (p1)*
 💰 মূল্য: ৳২৫০
 ⚡ প্রতিদিন: ২০০+ Likes
 📅 ডেলিভারি সময়কাল: ৩০ দিন
 
-2️⃣ *60-Day Value (p2)*
+2️⃣ *Value Auto Boost (50+ Likes) (p2)*
 💰 মূল্য: ৳২২০
 ⚡ প্রতিদিন: ৫০+ Likes
 📅 ডেলিভারি সময়কাল: ৬০ দিন
 
-3️⃣ *150+ Likes Package (p3)*
+3️⃣ *150+ Likes Auto Boost (p3)*
 💰 মূল্য: ৳২২০
 ⚡ প্রতিদিন: ১৫০+ Likes
 📅 ডেলিভারি সময়কাল: ৩০ দিন
 
-4️⃣ *60-Day Pro (p4)*
+4️⃣ *Pro Auto Boost (80+ Likes) (p4)*
 💰 মূল্য: ৳৩২০
 ⚡ প্রতিদিন: ৮০+ Likes
 📅 ডেলিভারি সময়কাল: ৬০ দিন
 
-5️⃣ *Yearly Value (p5)*
+5️⃣ *Yearly Value Auto Boost (50+ Likes) (p5)*
 💰 মূল্য: ৳৮০০
 ⚡ প্রতিদিন: ৫০+ Likes
 📅 ডেলিভারি সময়কাল: ৩৬৫ দিন
 
-6️⃣ *👑 50+ Permanent (p6)*
+6️⃣ *👑 Lifetime Star Auto Boost (50+ Likes) (p6)*
 💰 মূল্য: ৳১,০৫০
 ⚡ প্রতিদিন: ৫০+ Likes
 ♾️ স্থায়ী প্যাকেজ
 
-7️⃣ *🌟 Yearly Pro (p7)*
+7️⃣ *🌟 Yearly Pro Auto Boost (80+ Likes) (p7)*
 💰 মূল্য: ৳১,২০০
 ⚡ প্রতিদিন: ৮০+ Likes
 📅 ডেলিভারি সময়কাল: ৩৬৫ দিন
 
-8️⃣ *💎 200+ Permanent (p8)*
+8️⃣ *💎 Lifetime VIP Auto Boost (200+ Likes) (p8)*
 💰 মূল্য: ৳৫,০০০
 ⚡ প্রতিদিন: ২০০+ Likes
 ♾️ স্থায়ী প্যাকেজ
@@ -364,14 +364,14 @@ async function connectToWhatsApp() {
                 lastUserActivity.set(senderID, currentTime);
 
                 const packages = {
-                    p1: ['Ultra Package (২০০+ Likes daily, ডেলিভারি সময়কাল ৩০ দিন)', '৳২৫০'],
-                    p2: ['60-Day Value (৫০+ Likes daily, ডেলিভারি সময়কাল ৬০ দিন)', '৳২২০'],
-                    p3: ['150+ Likes Package (১৫০+ Likes daily, ডেলিভারি সময়কাল ৩০ দিন)', '৳২২০'],
-                    p4: ['60-Day Pro (৮০+ Likes daily, ডেলিভারি সময়কাল ৬০ দিন)', '৳৩২০'],
-                    p5: ['Yearly Value (৫০+ Likes daily, ডেলিভারি সময়কাল ৩৬৫ দিন)', '৳৮০০'],
-                    p6: ['50+ Likes Permanent (স্থায়ী প্যাকেজ)', '৳১,০৫০'],
-                    p7: ['Yearly Pro (৮০+ Likes daily, ডেলিভারি সময়কাল ৩৬৫ দিন)', '৳১,২০০'],
-                    p8: ['200+ Likes Permanent (স্থায়ী প্যাকেজ)', '৳৫,০০০']
+                    p1: ['Ultra Auto Boost (200+ Likes)', '৳২৫০'],
+                    p2: ['Value Auto Boost (50+ Likes)', '৳২২০'],
+                    p3: ['150+ Likes Auto Boost', '৳২২০'],
+                    p4: ['Pro Auto Boost (80+ Likes)', '৳৩২০'],
+                    p5: ['Yearly Value Auto Boost (50+ Likes)', '৳৮০০'],
+                    p6: ['Lifetime Star Auto Boost (50+ Likes)', '৳১,০৫০'],
+                    p7: ['Yearly Pro Auto Boost (80+ Likes)', '৳১,২০০'],
+                    p8: ['Lifetime VIP Auto Boost (200+ Likes)', '৳৫,০০০']
                 };
 
                 const [pkgName, pkgPrice] = packages[text];
