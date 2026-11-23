@@ -293,42 +293,42 @@ async function connectToWhatsApp() {
 📦 *লাইক প্যাকেজসমূহ*
 ━━━━━━━━━━━━━━━━━━
 
-1️⃣ *Ultra Auto Boost (200+ Likes) (p1)*
+1️⃣ *Ultra (200+ Likes) (p1)*
 💰 মূল্য: ৳২৫০
 ⚡ প্রতিদিন: ২০০+ Likes
 📅 ডেলিভারি সময়কাল: ৩০ দিন
 
-2️⃣ *Value Auto Boost (50+ Likes) (p2)*
+2️⃣ *Value (50+ Likes) (p2)*
 💰 মূল্য: ৳২২০
 ⚡ প্রতিদিন: ৫০+ Likes
 📅 ডেলিভারি সময়কাল: ৬০ দিন
 
-3️⃣ *150+ Likes Auto Boost (p3)*
+3️⃣ *150+ Likes (p3)*
 💰 মূল্য: ৳২২০
 ⚡ প্রতিদিন: ১৫০+ Likes
 📅 ডেলিভারি সময়কাল: ৩০ দিন
 
-4️⃣ *Pro Auto Boost (80+ Likes) (p4)*
+4️⃣ *Pro (80+ Likes) (p4)*
 💰 মূল্য: ৳৩২০
 ⚡ প্রতিদিন: ৮০+ Likes
 📅 ডেলিভারি সময়কাল: ৬০ দিন
 
-5️⃣ *Yearly Value Auto Boost (50+ Likes) (p5)*
+5️⃣ *Yearly Value (50+ Likes) (p5)*
 💰 মূল্য: ৳৮০০
 ⚡ প্রতিদিন: ৫০+ Likes
 📅 ডেলিভারি সময়কাল: ৩৬৫ দিন
 
-6️⃣ *👑 Lifetime Star Auto Boost (50+ Likes) (p6)*
+6️⃣ *👑 Lifetime Star (50+ Likes) (p6)*
 💰 মূল্য: ৳১,০৫০
 ⚡ প্রতিদিন: ৫০+ Likes
 ♾️ স্থায়ী প্যাকেজ
 
-7️⃣ *🌟 Yearly Pro Auto Boost (80+ Likes) (p7)*
+7️⃣ *🌟 Yearly Pro (80+ Likes) (p7)*
 💰 মূল্য: ৳১,২০০
 ⚡ প্রতিদিন: ৮০+ Likes
 📅 ডেলিভারি সময়কাল: ৩৬৫ দিন
 
-8️⃣ *💎 Lifetime VIP Auto Boost (200+ Likes) (p8)*
+8️⃣ *💎 Lifetime VIP (200+ Likes) (p8)*
 💰 মূল্য: ৳৫,০০০
 ⚡ প্রতিদিন: ২০০+ Likes
 ♾️ স্থায়ী প্যাকেজ
@@ -364,14 +364,14 @@ async function connectToWhatsApp() {
                 lastUserActivity.set(senderID, currentTime);
 
                 const packages = {
-                    p1: ['Ultra Auto Boost (200+ Likes)', '৳২৫০'],
-                    p2: ['Value Auto Boost (50+ Likes)', '৳২২০'],
-                    p3: ['150+ Likes Auto Boost', '৳২২০'],
-                    p4: ['Pro Auto Boost (80+ Likes)', '৳৩২০'],
-                    p5: ['Yearly Value Auto Boost (50+ Likes)', '৳৮০০'],
-                    p6: ['Lifetime Star Auto Boost (50+ Likes)', '৳১,০৫০'],
-                    p7: ['Yearly Pro Auto Boost (80+ Likes)', '৳১,২০০'],
-                    p8: ['Lifetime VIP Auto Boost (200+ Likes)', '৳৫,০০০']
+                    p1: ['Ultra (200+ Likes)', '৳২৫০'],
+                    p2: ['Value (50+ Likes)', '৳২২০'],
+                    p3: ['150+ Likes', '৳২২০'],
+                    p4: ['Pro (80+ Likes)', '৳৩২০'],
+                    p5: ['Yearly Value (50+ Likes)', '৳৮০০'],
+                    p6: ['Lifetime Star (50+ Likes)', '৳১,০৫০'],
+                    p7: ['Yearly Pro (80+ Likes)', '৳১,২০০'],
+                    p8: ['Lifetime VIP (200+ Likes)', '৳৫,০০০']
                 };
 
                 const [pkgName, pkgPrice] = packages[text];
