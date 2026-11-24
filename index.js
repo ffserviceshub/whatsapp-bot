@@ -100,6 +100,49 @@ function isOrderMessage(messageText) {
     return websiteOrder || whatsappOrder;
 }
 
+
+// বড় প্যাকেজের তালিকা: সাধারণ মেনুতে দেখানো হবে না
+function getBigPackagesMessage() {
+    return `👑 *FF ServicesPicks — Premium Packages*
+
+আপনি বড় ও দীর্ঘমেয়াদি প্যাকেজ দেখতে চেয়েছেন। ❤️
+পছন্দের প্যাকেজ কোড পাঠিয়ে অর্ডার শুরু করতে পারেন।
+
+━━━━━━━━━━━━━━━━━━
+👑 *বড় প্যাকেজসমূহ*
+━━━━━━━━━━━━━━━━━━
+
+9️⃣ *Yearly Value (50+ Likes) (p9)*
+💰 মূল্য: ৳৭৫০
+⚡ প্রতিদিন: ৫০+ Likes
+📅 ডেলিভারি সময়কাল: ৩৬৫ দিন
+❤️ আনুমানিক মোট: ১৮,২৫০+ Likes
+
+🔟 *Lifetime Star (50+ Likes) (p10)*
+💰 মূল্য: ৳১,০৫০
+⚡ প্রতিদিন: ৫০+ Likes
+♾️ Permanent service
+❤️ মোট Likes: নির্দিষ্ট নয়
+
+1️⃣1️⃣ *Yearly Pro (80+ Likes) (p11)*
+💰 মূল্য: ৳১,১৫০
+⚡ প্রতিদিন: ৮০+ Likes
+📅 ডেলিভারি সময়কাল: ৩৬৫ দিন
+❤️ আনুমানিক মোট: ২৯,২০০+ Likes
+
+1️⃣2️⃣ *Lifetime VIP (200+ Likes) (p12)*
+💰 মূল্য: ৳৫,০০০
+⚡ প্রতিদিন: ২০০+ Likes
+♾️ Permanent service
+❤️ মোট Likes: নির্দিষ্ট নয়
+
+━━━━━━━━━━━━━━━━━━
+📌 ৩০ / ৬০ / ৩৬৫ দিন হলো Likes ডেলিভারির সময়কাল; Likes-এর মেয়াদ নয়। মোট Likes আনুমানিক, নিশ্চিত ডেলিভারির প্রতিশ্রুতি নয়। Permanent service supplier-এর শর্তসাপেক্ষ।
+
+📩 অর্ডার করতে p9 থেকে p12-এর মধ্যে পছন্দের কোড পাঠান।
+↩️ মূল মেনুতে যেতে "Menu" লিখুন।`;
+}
+
 async function connectToWhatsApp() {
     const authFolder = 'auth_info_baileys';
     const { state, saveCreds } = await useMultiFileAuthState(authFolder);
@@ -158,7 +201,7 @@ async function connectToWhatsApp() {
         try {
             const msg = messages?.[0];
 
-            if (!msg?.message || msg.key.fromMe) return;
+            if (!msg?.message) return;
 
             const senderID = msg.key.remoteJid;
 
@@ -172,6 +215,19 @@ async function connectToWhatsApp() {
 
             const text = messageText.trim().toLowerCase();
             const currentTime = Date.now();
+
+            // Admin নিজের WhatsApp থেকে কোনো customer chat-এ !big পাঠালে
+            // ওই customer-এর chat-এই বড় প্যাকেজের তালিকা দেখানো হবে।
+            if (msg.key.fromMe) {
+                if (['!big', '/big', '!vip-packages'].includes(text)) {
+                    userState.set(senderID, 'viewing_big_packages');
+                    await sock.sendMessage(senderID, {
+                        text: getBigPackagesMessage()
+                    });
+                    console.log(`👑 Admin opened big packages for ${senderID}`);
+                }
+                return;
+            }
             const lastTime = lastUserActivity.get(senderID) || 0;
             const oneHour = 60 * 60 * 1000;
             const twentyFourHours = 24 * oneHour;
@@ -187,6 +243,16 @@ async function connectToWhatsApp() {
             if (holdUntil !== 0 && holdUntil <= currentTime) {
                 orderHoldUntil.delete(senderID);
                 saveOrderHolds();
+            }
+
+            // Admin কাস্টমারকে যে গোপন keyword দেবেন, সেটি লিখলেই বড় প্যাকেজ খুলবে।
+            if (text === 'ffvip') {
+                userState.set(senderID, 'viewing_big_packages');
+                lastUserActivity.set(senderID, currentTime);
+                await sock.sendMessage(senderID, {
+                    text: getBigPackagesMessage()
+                });
+                return;
             }
 
             // FIX: Website অথবা WhatsApp order format শনাক্ত করা
@@ -282,87 +348,96 @@ async function connectToWhatsApp() {
                 lastUserActivity.set(senderID, currentTime);
 
                 await sock.sendMessage(senderID, {
-                    text: `🔥 *FF ServicesPicks — Free Fire Likes Packages*
+                    text: `🔥 *FF ServicesPicks — Starter Packages*
 
-✨ *আপনার পছন্দের প্যাকেজ বেছে নিন*
-প্রতিদিন নির্দিষ্ট পরিমাণ Likes ডেলিভারি দেওয়া হবে নিচে উল্লেখিত সময়কাল অনুযায়ী। ❤️
-
-👇 অর্ডার শুরু করতে পছন্দের প্যাকেজ কোড (p1–p8) পাঠান:
+শুরু করার জন্য সাশ্রয়ী প্যাকেজগুলো নিচে দেওয়া হলো। ❤️
+পছন্দের প্যাকেজ কোড (p1–p8) পাঠিয়ে অর্ডার শুরু করুন।
 
 ━━━━━━━━━━━━━━━━━━
-📦 *লাইক প্যাকেজসমূহ*
+📦 *Starter Packages*
 ━━━━━━━━━━━━━━━━━━
 
-1️⃣ *Ultra (200+ Likes) (p1)*
-💰 মূল্য: ৳২৫০
-⚡ প্রতিদিন: ২০০+ Likes
+1️⃣ *Starter (30+ Likes) (p1)*
+💰 মূল্য: ৳৭০
+⚡ প্রতিদিন: ৩০+ Likes
 📅 ডেলিভারি সময়কাল: ৩০ দিন
-❤️ মোট: কমপক্ষে ৬,০০০ Likes (২০০ × ৩০)
+❤️ আনুমানিক মোট: ৯০০+ Likes
 
 2️⃣ *Value (50+ Likes) (p2)*
+💰 মূল্য: ৳১২০
+⚡ প্রতিদিন: ৫০+ Likes
+📅 ডেলিভারি সময়কাল: ৩০ দিন
+❤️ আনুমানিক মোট: ১,৫০০+ Likes
+
+3️⃣ *Starter Plus (30+ Likes) (p3)*
+💰 মূল্য: ৳১১০
+⚡ প্রতিদিন: ৩০+ Likes
+📅 ডেলিভারি সময়কাল: ৬০ দিন
+❤️ আনুমানিক মোট: ১,৮০০+ Likes
+
+4️⃣ *Pro (80+ Likes) (p4)*
+💰 মূল্য: ৳১৫০
+⚡ প্রতিদিন: ৮০+ Likes
+📅 ডেলিভারি সময়কাল: ৩০ দিন
+❤️ আনুমানিক মোট: ২,৪০০+ Likes
+
+5️⃣ *Value Plus (50+ Likes) (p5)*
 💰 মূল্য: ৳১৮০
 ⚡ প্রতিদিন: ৫০+ Likes
 📅 ডেলিভারি সময়কাল: ৬০ দিন
-❤️ মোট: কমপক্ষে ৩,০০০ Likes (৫০ × ৬০)
+❤️ আনুমানিক মোট: ৩,০০০+ Likes
 
-3️⃣ *Special (150+ Likes) (p3)*
+6️⃣ *Special (150+ Likes) (p6)*
 💰 মূল্য: ৳২২০
 ⚡ প্রতিদিন: ১৫০+ Likes
 📅 ডেলিভারি সময়কাল: ৩০ দিন
-❤️ মোট: কমপক্ষে ৪,৫০০ Likes (১৫০ × ৩০)
+❤️ আনুমানিক মোট: ৪,৫০০+ Likes
 
-4️⃣ *Pro (80+ Likes) (p4)*
+7️⃣ *🔥 জনপ্রিয় — Ultra (200+ Likes) (p7)*
+💰 মূল্য: ৳২৫০
+🎁 *৭ দিনের অফার*
+⚡ প্রতিদিন: ২০০+ Likes
+📅 ডেলিভারি সময়কাল: ৩০ দিন
+❤️ আনুমানিক মোট: ৬,০০০+ Likes
+
+8️⃣ *Pro Plus (80+ Likes) (p8)*
 💰 মূল্য: ৳২৮০
 ⚡ প্রতিদিন: ৮০+ Likes
 📅 ডেলিভারি সময়কাল: ৬০ দিন
-❤️ মোট: কমপক্ষে ৪,৮০০ Likes (৮০ × ৬০)
-
-5️⃣ *Yearly Value (50+ Likes) (p5)*
-💰 মূল্য: ৳৭৫০
-⚡ প্রতিদিন: ৫০+ Likes
-📅 ডেলিভারি সময়কাল: ৩৬৫ দিন
-❤️ মোট: কমপক্ষে ১৮,২৫০ Likes (৫০ × ৩৬৫)
-
-6️⃣ *👑 Lifetime Star (50+ Likes) (p6)*
-💰 মূল্য: ৳১,০৫০
-⚡ প্রতিদিন: ৫০+ Likes
-♾️ স্থায়ী প্যাকেজ
-❤️ মোট Likes: নির্দিষ্ট নয় (স্থায়ী সার্ভিস)
-
-7️⃣ *🌟 Yearly Pro (80+ Likes) (p7)*
-💰 মূল্য: ৳১,১৫০
-⚡ প্রতিদিন: ৮০+ Likes
-📅 ডেলিভারি সময়কাল: ৩৬৫ দিন
-❤️ মোট: কমপক্ষে ২৯,২০০ Likes (৮০ × ৩৬৫)
-
-8️⃣ *💎 Lifetime VIP (200+ Likes) (p8)*
-💰 মূল্য: ৳৫,০০০
-⚡ প্রতিদিন: ২০০+ Likes
-♾️ স্থায়ী প্যাকেজ
-❤️ মোট Likes: নির্দিষ্ট নয় (স্থায়ী সার্ভিস)
+❤️ আনুমানিক মোট: ৪,৮০০+ Likes
 
 ━━━━━━━━━━━━━━━━━━
-📌 *গুরুত্বপূর্ণ তথ্য*
-━━━━━━━━━━━━━━━━━━
-📅 ৩০ / ৬০ / ৩৬৫ দিন বলতে শুধু Likes ডেলিভারি দেওয়ার সময়কাল বোঝায়। এটি আপনার প্রোফাইলের Likes মুছে যাওয়ার বা Likes-এর মেয়াদ শেষ হওয়ার সময় নয়।
+💬 *আরও বড় প্যাকেজ নিতে চান?*
+Yearly ও Lifetime-এর মতো বড় প্যাকেজের জন্য Admin-এর সঙ্গে যোগাযোগ করুন। Admin আপনাকে বড় প্যাকেজের তালিকা দেখিয়ে দেবেন।
 
-♾️ Permanent প্যাকেজে নির্দিষ্ট দৈনিক Likes টার্গেট অনুযায়ী স্থায়ী সার্ভিস দেওয়া হয়।
+📌 ৩০ / ৬০ দিন হলো Likes ডেলিভারির সময়কাল; Likes-এর মেয়াদ নয়। মোট Likes আনুমানিক, নিশ্চিত ডেলিভারির প্রতিশ্রুতি নয়।
 
-📩 অর্ডার করতে পছন্দের প্যাকেজ কোড পাঠান।
-
-↩️ মূল মেনুতে যেতে "Menu" লিখে পাঠান!`
+📩 অর্ডার করতে p1 থেকে p8-এর মধ্যে পছন্দের কোড পাঠান।
+↩️ মূল মেনুতে যেতে "Menu" লিখুন!`
                 });
 
                 return;
             }
 
             // প্যাকেজ কোড
-            if (['p1', 'p2', 'p3', 'p4', 'p5', 'p6', 'p7', 'p8'].includes(text)) {
-                if (userState.get(senderID) !== 'viewing_packages') {
-                    await sock.sendMessage(senderID, {
-                        text: `⚠️ *প্রথমে প্যাকেজ লিস্ট দেখে তারপর কোড দিন!*
+            const regularPackageCodes = ['p1', 'p2', 'p3', 'p4', 'p5', 'p6', 'p7', 'p8'];
+            const bigPackageCodes = ['p9', 'p10', 'p11', 'p12'];
 
-প্রথমে চ্যাটে 1 লিখে প্যাকেজ লিস্ট দেখুন। তারপর p1 থেকে p8-এর মধ্যে পছন্দের কোড পাঠান।
+            if (regularPackageCodes.includes(text) || bigPackageCodes.includes(text)) {
+                const isBigPackageCode = bigPackageCodes.includes(text);
+                const requiredState = isBigPackageCode ? 'viewing_big_packages' : 'viewing_packages';
+
+                if (userState.get(senderID) !== requiredState) {
+                    await sock.sendMessage(senderID, {
+                        text: isBigPackageCode
+                            ? `⚠️ *বড় প্যাকেজের তালিকা আগে খুলুন।*
+
+Admin-এর সঙ্গে যোগাযোগ করুন অথবা Admin দেওয়া access keyword লিখুন।
+
+↩️ মেনু দেখতে "Menu" লিখুন।`
+                            : `⚠️ *প্রথমে প্যাকেজ লিস্ট দেখে তারপর কোড দিন!*
+
+প্রথমে চ্যাটে 1 লিখে Starter Packages দেখুন। তারপর p1 থেকে p8-এর মধ্যে পছন্দের কোড পাঠান।
 
 ↩️ মেনু দেখতে "Menu" লিখুন।`
                     });
@@ -372,14 +447,18 @@ async function connectToWhatsApp() {
                 lastUserActivity.set(senderID, currentTime);
 
                 const packages = {
-                    p1: ['Ultra (200+ Likes)', '৳২৫০'],
-                    p2: ['Value (50+ Likes)', '৳১৮০'],
-                    p3: ['Special (150+ Likes)', '৳২২০'],
-                    p4: ['Pro (80+ Likes)', '৳২৮০'],
-                    p5: ['Yearly Value (50+ Likes)', '৳৭৫০'],
-                    p6: ['Lifetime Star (50+ Likes)', '৳১,০৫০'],
-                    p7: ['Yearly Pro (80+ Likes)', '৳১,১৫০'],
-                    p8: ['Lifetime VIP (200+ Likes)', '৳৫,০০০']
+                    p1: ['Starter (30+ Likes)', '৳৭০'],
+                    p2: ['Value (50+ Likes)', '৳১২০'],
+                    p3: ['Starter Plus (30+ Likes)', '৳১১০'],
+                    p4: ['Pro (80+ Likes)', '৳১৫০'],
+                    p5: ['Value Plus (50+ Likes)', '৳১৮০'],
+                    p6: ['Special (150+ Likes)', '৳২২০'],
+                    p7: ['Ultra (200+ Likes) — ৭ দিনের অফার', '৳২৫০'],
+                    p8: ['Pro Plus (80+ Likes)', '৳২৮০'],
+                    p9: ['Yearly Value (50+ Likes)', '৳৭৫০'],
+                    p10: ['Lifetime Star (50+ Likes)', '৳১,০৫০'],
+                    p11: ['Yearly Pro (80+ Likes)', '৳১,১৫০'],
+                    p12: ['Lifetime VIP (200+ Likes)', '৳৫,০০০']
                 };
 
                 const [pkgName, pkgPrice] = packages[text];
@@ -489,7 +568,7 @@ TrxID/Number: [TrxID অথবা যে bKash/Nagad নম্বর থেক�
                     text: `📋 *খুব সহজেই যেভাবে অর্ডার করবেন:*
 
 ১️⃣ প্রথমে চ্যাটে 1 লিখে প্যাকেজ লিস্ট দেখুন।
-২️⃣ পছন্দের প্যাকেজ কোড (p1 থেকে p8) পাঠান।
+২️⃣ পছন্দের প্যাকেজ কোড পাঠান।
 ৩️⃣ bKash (\`01733054857\`) অথবা Nagad (\`01951722651\`)—যে মাধ্যমে পেমেন্ট করবেন, সেই নম্বরে সঠিক টাকা Send Money করুন।
 ৪️⃣ এরপর নিচের ফরম্যাটটি কপি করে তথ্য দিয়ে পাঠান:
 
