@@ -121,8 +121,9 @@ function getBigPackagesMessage() {
 🔟 *Lifetime Star (50+ Likes) (p10)*
 💰 মূল্য: ৳১,০৫০
 ⚡ প্রতিদিন: ৫০+ Likes
-♾️ Permanent service
-❤️ মোট Likes: নির্দিষ্ট নয়
+♾️ অসীম সময় Likes পাবেন (যতদিন আপনার Free Fire ID সক্রিয় থাকবে)
+📊 বছরে কমপক্ষে: ১৮,২৫০+ Likes
+❤️ মোট Likes: অসীম — এর চেয়েও বেশি পেতে পারেন
 
 1️⃣1️⃣ *Yearly Pro (80+ Likes) (p11)*
 💰 মূল্য: ৳১,১৫০
@@ -133,8 +134,9 @@ function getBigPackagesMessage() {
 1️⃣2️⃣ *Lifetime VIP (200+ Likes) (p12)*
 💰 মূল্য: ৳৫,০০০
 ⚡ প্রতিদিন: ২০০+ Likes
-♾️ Permanent service
-❤️ মোট Likes: নির্দিষ্ট নয়
+♾️ অসীম সময় Likes পাবেন (যতদিন আপনার Free Fire ID সক্রিয় থাকবে)
+📊 বছরে কমপক্ষে: ৭৩,০০০+ Likes
+❤️ মোট Likes: অসীম — এর চেয়েও বেশি পেতে পারেন
 
 ━━━━━━━━━━━━━━━━━━
 📌 ৩০ / ৬০ / ৩৬৫ দিন হলো Likes ডেলিভারির সময়কাল; Likes-এর মেয়াদ নয়। উল্লেখিত মোট Likes হলো ন্যূনতম লক্ষ্যমাত্রা; এর চেয়ে বেশি Likes-ও পেতে পারেন। Permanent service supplier-এর শর্তসাপেক্ষ।
@@ -605,6 +607,9 @@ TrxID/Number: [TrxID অথবা যে bKash/Nagad নম্বর থেক�
 
                 await sock.sendMessage(senderID, {
                     text: `❓ *সাধারণ কিছু প্রশ্ন (FAQ)*
+
+❤️ *আমি কি প্যাকেজে উল্লেখিত সংখ্যার চেয়ে কম Likes পাব?*
+না। প্রতিদিনের Likes Target-কে ন্যূনতম হিসাব হিসেবে ধরা হয়েছে। আপনি উল্লেখিত সংখ্যার কম নয়, বরং এর চেয়েও বেশি Likes পেতে পারেন। Lifetime প্যাকেজে আপনার Free Fire ID সক্রিয় থাকা পর্যন্ত Likes দেওয়া চলবে।
 
 🎮 *Free Fire ID কি ban হবে?*
 না, আমাদের থেকে likes নেওয়ার জন্য আপনার Free Fire ID-তে login করতে হয় না। আমরা আমাদের নিজস্ব ID/account ব্যবহার করে likes করি, তাই আপনার game password বা OTP দেওয়ার প্রয়োজন নেই।
