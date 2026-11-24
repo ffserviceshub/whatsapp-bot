@@ -220,6 +220,13 @@ async function connectToWhatsApp() {
             // ওই customer-এর chat-এই বড় প্যাকেজের তালিকা দেখানো হবে।
             if (msg.key.fromMe) {
                 if (['!big', '/big', '!vip-packages'].includes(text)) {
+                    // Admin-এর trigger message customer chat থেকে delete করে শুধু package list পাঠাও
+                    try {
+                        await sock.sendMessage(senderID, { delete: msg.key });
+                    } catch (deleteError) {
+                        console.error('Could not delete admin trigger message:', deleteError);
+                    }
+
                     userState.set(senderID, 'viewing_big_packages');
                     await sock.sendMessage(senderID, {
                         text: getBigPackagesMessage()
