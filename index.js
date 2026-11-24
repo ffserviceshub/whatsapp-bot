@@ -300,7 +300,7 @@ async function connectToWhatsApp() {
 ❤️ মোট: কমপক্ষে ৬,০০০ Likes (২০০ × ৩০)
 
 2️⃣ *Value (50+ Likes) (p2)*
-💰 মূল্য: ৳২২০
+💰 মূল্য: ৳১৮০
 ⚡ প্রতিদিন: ৫০+ Likes
 📅 ডেলিভারি সময়কাল: ৬০ দিন
 ❤️ মোট: কমপক্ষে ৩,০০০ Likes (৫০ × ৬০)
@@ -312,13 +312,13 @@ async function connectToWhatsApp() {
 ❤️ মোট: কমপক্ষে ৪,৫০০ Likes (১৫০ × ৩০)
 
 4️⃣ *Pro (80+ Likes) (p4)*
-💰 মূল্য: ৳৩২০
+💰 মূল্য: ৳২৮০
 ⚡ প্রতিদিন: ৮০+ Likes
 📅 ডেলিভারি সময়কাল: ৬০ দিন
 ❤️ মোট: কমপক্ষে ৪,৮০০ Likes (৮০ × ৬০)
 
 5️⃣ *Yearly Value (50+ Likes) (p5)*
-💰 মূল্য: ৳৮০০
+💰 মূল্য: ৳৭৫০
 ⚡ প্রতিদিন: ৫০+ Likes
 📅 ডেলিভারি সময়কাল: ৩৬৫ দিন
 ❤️ মোট: কমপক্ষে ১৮,২৫০ Likes (৫০ × ৩৬৫)
@@ -330,7 +330,7 @@ async function connectToWhatsApp() {
 ❤️ মোট Likes: নির্দিষ্ট নয় (স্থায়ী সার্ভিস)
 
 7️⃣ *🌟 Yearly Pro (80+ Likes) (p7)*
-💰 মূল্য: ৳১,২০০
+💰 মূল্য: ৳১,১৫০
 ⚡ প্রতিদিন: ৮০+ Likes
 📅 ডেলিভারি সময়কাল: ৩৬৫ দিন
 ❤️ মোট: কমপক্ষে ২৯,২০০ Likes (৮০ × ৩৬৫)
@@ -373,12 +373,12 @@ async function connectToWhatsApp() {
 
                 const packages = {
                     p1: ['Ultra (200+ Likes)', '৳২৫০'],
-                    p2: ['Value (50+ Likes)', '৳২২০'],
+                    p2: ['Value (50+ Likes)', '৳১৮০'],
                     p3: ['Special (150+ Likes)', '৳২২০'],
-                    p4: ['Pro (80+ Likes)', '৳৩২০'],
-                    p5: ['Yearly Value (50+ Likes)', '৳৮০০'],
+                    p4: ['Pro (80+ Likes)', '৳২৮০'],
+                    p5: ['Yearly Value (50+ Likes)', '৳৭৫০'],
                     p6: ['Lifetime Star (50+ Likes)', '৳১,০৫০'],
-                    p7: ['Yearly Pro (80+ Likes)', '৳১,২০০'],
+                    p7: ['Yearly Pro (80+ Likes)', '৳১,১৫০'],
                     p8: ['Lifetime VIP (200+ Likes)', '৳৫,০০০']
                 };
 
