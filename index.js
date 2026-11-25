@@ -1,5 +1,5 @@
 
-const { default: makeWASocket, useMultiFileAuthState, DisconnectReason } = require('@whiskeysockets/baileys');
+const { default: makeWASocket, useMultiFileAuthState, DisconnectReason, fetchLatestWaWebVersion } = require('@whiskeysockets/baileys');
 const pino = require('pino');
 const express = require('express');
 const fs = require('fs');
@@ -169,8 +169,23 @@ async function connectToWhatsApp() {
     try {
     const { state, saveCreds } = await useMultiFileAuthState(authFolder);
 
+    // WhatsApp device-linking requires a current WhatsApp Web client revision.
+    let waVersion;
+    try {
+        const latest = await fetchLatestWaWebVersion();
+        waVersion = latest?.version;
+        if (Array.isArray(waVersion)) {
+            console.log(`Using live WhatsApp Web version: ${waVersion.join('.')}`);
+        } else {
+            console.warn('Live WhatsApp Web version unavailable; using Baileys default.');
+        }
+    } catch (versionError) {
+        console.error('Could not fetch live WhatsApp Web version; using Baileys default:', versionError);
+    }
+
     sock = makeWASocket({
-        logger: pino({ level: 'silent' }),
+        ...(waVersion ? { version: waVersion } : {}),
+        logger: pino({ level: 'warn' }),
         auth: state,
         browser: ['Windows', 'Chrome', '115.0.0.0']
     });
