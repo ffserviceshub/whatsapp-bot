@@ -222,6 +222,12 @@ async function connectToWhatsApp() {
                 }
                 reconnectAttempts = 0;
                 scheduleReconnect(3000);
+            } else if (statusCode === DisconnectReason.restartRequired || statusCode === 515) {
+                // 515 is a normal Baileys restart signal: keep the saved session and
+                // immediately create a fresh socket. Never delete auth data for this code.
+                console.log('WhatsApp requested a socket restart (515). Keeping session and reconnecting now...');
+                reconnectAttempts = 0;
+                scheduleReconnect(1000);
             } else {
                 const delay = Math.min(5000 * (2 ** reconnectAttempts), 60000);
                 reconnectAttempts++;
