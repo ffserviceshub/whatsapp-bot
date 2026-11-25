@@ -315,33 +315,64 @@ async function connectToWhatsApp() {
                 userState.set(senderID, 'main_menu');
                 lastUserActivity.set(senderID, currentTime);
 
-                let welcomeText = `🎮 *FF ServicesPicks-এ আপনাকে স্বাগতম!* 🚀
+                const welcomeText = `🎮 *FF ServicesPicks-এ স্বাগতম!* ❤️
 
-🔥 *বাজারে সবচেয়ে কম দামে* আপনার ফ্রি ফায়ার প্রোফাইলকে আরও আকর্ষণীয় ও প্রিমিয়াম করতে আমাদের সাশ্রয়ী লাইক প্যাকেজগুলো দেখে নিতে পারেন। ♥️
+আপনার Free Fire ID-এর জন্য Likes Package দেখুন।
 
-🌐 *আমাদের ওয়েবসাইট:* https://sptopup.pages.dev/`;
-
-                if (lastTime !== 0 && currentTime - lastTime > twentyFourHours) {
-                    welcomeText = `✨ *Welcome Back! দীর্ঘদিন পর আমাদের চ্যাটে আপনাকে আবার ফিরে পেয়ে খুব ভালো লাগলো!* 🥰
-
-সবাইয়ের চেয়ে অনেক কম দামে সেরা সার্ভিস দিতে আমরা সবসময় আপনার পাশে আছি। ♥️`;
-                }
+🌐 Website: https://sptopup.pages.dev/`;
 
                 await sock.sendMessage(senderID, {
                     text: `${welcomeText}
 
+👇 পছন্দের অপশনের নম্বর লিখুন:
 
-👇 নিচের অপশনগুলোর সামনে থাকা *নম্বরটি* চ্যাটে লিখে পাঠিয়ে দিন:
+1️⃣ 🔥 Likes Package ও মূল্য
+2️⃣ 💳 পেমেন্টের নিয়ম
+3️⃣ 📋 অর্ডার করার নিয়ম
+4️⃣ ❓ সাধারণ প্রশ্ন ও নিরাপত্তা
+5️⃣ 💬 Admin-এর সাথে যোগাযোগ
+6️⃣ 🎁 200+ Likes FREE TRIAL
 
-1️⃣ 🔥 মেয়াদি লাইক প্যাকেজ ও সাশ্রয়ী মূল্য
-2️⃣ 💳 bKash / Nagad পেমেন্ট করার নিয়ম
-3️⃣ 📋 খুব সহজে যেভাবে অর্ডার করবেন
-4️⃣ ❓ সাধারণ কিছু প্রশ্ন (FAQ)
-5️⃣ 💬 অ্যাডমিনের সাথে সরাসরি কথা বলুন
+🤖 এটি আমাদের স্বয়ংক্রিয় Bot Menu।
 
-*💡 টিপস:* যেকোনো সময় মূল মেনুতে ফিরে আসতে চ্যাটে শুধু "Menu" লিখে পাঠান।`
+↩️ মূল মেনুতে ফিরতে \`Menu\` লিখুন।`
                 });
 
+                return;
+            }
+
+            // Free Trial: UID গ্রহণ, Admin-কে জানানো
+            if (userState.get(senderID) === 'awaiting_trial_uid') {
+                if (!/^\\d{8,12}$/.test(text)) {
+                    await sock.sendMessage(senderID, {
+                        text: `⚠️ সঠিক Free Fire UID দিন। UID শুধু ৮–১২টি সংখ্যা হতে হবে। Password বা OTP দেবেন না।`
+                    });
+                    return;
+                }
+
+                userState.delete(senderID);
+                lastUserActivity.set(senderID, currentTime);
+
+                const adminJid = '8801951722651@s.whatsapp.net';
+                await sock.sendMessage(adminJid, {
+                    text: `🎁 *নতুন FREE TRIAL অনুরোধ*
+
+👤 Customer: ${senderID}
+🎮 Free Fire UID: ${messageText}
+❤️ Trial: 200+ Likes
+
+অনুগ্রহ করে UID যাচাই করে ম্যানুয়ালি Trial দিন।`
+                });
+
+                await sock.sendMessage(senderID, {
+                    text: `✅ *আপনার UID পাওয়া গেছে!* ❤️
+
+🎁 200+ Likes Free Trial-এর অনুরোধটি Admin-কে জানানো হয়েছে।
+
+⏳ যাচাই করে যত দ্রুত সম্ভব Trial দেওয়া হবে।
+
+ধন্যবাদ FF ServicesPicks-এর সাথে থাকার জন্য!`
+                });
                 return;
             }
 
@@ -633,6 +664,22 @@ bKash (\`01733054857\`) অথবা Nagad (\`01951722651\`)—আপনার �
                 return;
             }
 
+            // অপশন ৬: Free Trial
+            if (text === '6' || text.includes('free trial') || text.includes('trial')) {
+                supportUsers.delete(senderID);
+                userState.set(senderID, 'awaiting_trial_uid');
+                lastUserActivity.set(senderID, currentTime);
+
+                await sock.sendMessage(senderID, {
+                    text: `🎁 *200+ Likes FREE TRIAL!* ❤️
+
+Trial পেতে আপনার Free Fire UID পাঠান।
+
+⚠️ শুধু UID দিন। Password বা OTP নয়।`
+                });
+                return;
+            }
+
             // অপশন ৫: কাস্টমার সাপোর্ট
             if (
                 text === '5' ||
@@ -644,8 +691,15 @@ bKash (\`01733054857\`) অথবা Nagad (\`01951722651\`)—আপনার �
                 lastUserActivity.set(senderID, currentTime);
 
                 await sock.sendMessage(senderID, {
-                    text: `💬 *অ্যাডমিন ও কাস্টমার সাপোর্ট*
-আপনার মেসেজটি এখানে লিখে পাঠান। খুব শীঘ্রই অ্যাডমিন আপনার সাথে সরাসরি কথা বলবেন! ❤️`
+                    text: `💬 *FF ServicesPicks — Admin Support*
+
+আপনার মেসেজটি পেয়েছি। ❤️
+
+আমাদের Admin বর্তমানে ব্যস্ত আছেন।
+
+⏳ যত দ্রুত সম্ভব আপনার সাথে যোগাযোগ করবেন। অনুগ্রহ করে অপেক্ষা করুন।
+
+🤖 এটি একটি Automated Reply।`
                 });
 
                 return;
@@ -659,12 +713,22 @@ bKash (\`01733054857\`) অথবা Nagad (\`01951722651\`)—আপনার �
                 lastUserActivity.set(senderID, currentTime);
 
                 await sock.sendMessage(senderID, {
-                    text: `❌ দুঃখিত, আপনার কমান্ডটি বুঝতে পারিনি।
+                    text: `🤖 *FF ServicesPicks Auto Reply*
 
-• প্যাকেজ দেখতে: Menu বা 1
-• অর্ডার করার নিয়ম: 3
-• নিরাপত্তা সতর্কতা: 4
-• অ্যাডমিনের সাথে কথা বলতে: 5`
+দুঃখিত, আপনার মেসেজটি বুঝতে পারিনি। 😊
+
+📦 Package: \`1\`
+❓ প্রশ্ন ও নিরাপত্তা: \`4\`
+💬 Admin: \`5\`
+🎁 Free Trial: \`6\`
+
+আপনার মেসেজটি Admin-এর কাছে পৌঁছেছে। ❤️
+
+আমাদের Admin বর্তমানে ব্যস্ত আছেন। যত দ্রুত সম্ভব যোগাযোগ করবেন। অনুগ্রহ করে অপেক্ষা করুন।
+
+↩️ মূল মেনু: \`Menu\`
+
+🤖 এটি একটি স্বয়ংক্রিয় উত্তর।`
                 });
             }
         } catch (err) {
