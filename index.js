@@ -145,8 +145,28 @@ function getBigPackagesMessage() {
 ↩️ মূল মেনুতে যেতে "Menu" লিখুন।`;
 }
 
+const authFolder = 'auth_info_baileys';
+let reconnectTimer = null;
+let reconnectAttempts = 0;
+let isStarting = false;
+
+function scheduleReconnect(delay) {
+    if (reconnectTimer) return;
+    reconnectTimer = setTimeout(() => {
+        reconnectTimer = null;
+        connectToWhatsApp().catch(err => {
+            console.error('WhatsApp reconnect failed:', err);
+            scheduleReconnect(Math.min(5000 * (2 ** reconnectAttempts++), 60000));
+        });
+    }, delay);
+}
+
 async function connectToWhatsApp() {
-    const authFolder = 'auth_info_baileys';
+    if (isStarting) return;
+    isStarting = true;
+
+    let sock;
+    try {
     const { state, saveCreds } = await useMultiFileAuthState(authFolder);
 
     const sock = makeWASocket({
@@ -176,22 +196,25 @@ async function connectToWhatsApp() {
 
         if (connection === 'close') {
             const statusCode = lastDisconnect?.error?.output?.statusCode;
-            const shouldReconnect = statusCode !== DisconnectReason.loggedOut;
+            const loggedOut = statusCode === DisconnectReason.loggedOut || statusCode === 401;
 
-            console.log('Connection closed, reconnecting...', shouldReconnect);
+            console.log('WhatsApp connection closed. Status:', statusCode ?? 'unknown');
 
-            if (statusCode === DisconnectReason.loggedOut || statusCode === 401) {
-                console.log('Session expired. Cleaning old session cache...');
-
+            if (loggedOut) {
+                console.log('Session logged out. Clearing old session so a fresh pairing code can be generated.');
                 if (fs.existsSync(authFolder)) {
                     fs.rmSync(authFolder, { recursive: true, force: true });
                 }
-            }
-
-            if (shouldReconnect) {
-                connectToWhatsApp();
+                reconnectAttempts = 0;
+                scheduleReconnect(3000);
+            } else {
+                const delay = Math.min(5000 * (2 ** reconnectAttempts), 60000);
+                reconnectAttempts++;
+                console.log(`Reconnecting WhatsApp in ${Math.ceil(delay / 1000)} seconds...`);
+                scheduleReconnect(delay);
             }
         } else if (connection === 'open') {
+            reconnectAttempts = 0;
             console.log('✅ FF ServicesPicks WhatsApp Bot successfully connected!');
         }
     });
@@ -735,8 +758,15 @@ Trial পেতে আপনার Free Fire UID পাঠান।
             console.error('Message handler error:', err);
         }
     });
+    } catch (err) {
+        console.error('WhatsApp connection setup error:', err);
+        scheduleReconnect(Math.min(5000 * (2 ** reconnectAttempts++), 60000));
+    } finally {
+        isStarting = false;
+    }
 }
 
 connectToWhatsApp().catch(err => {
     console.error('WhatsApp connection error:', err);
+    scheduleReconnect(5000);
 });
