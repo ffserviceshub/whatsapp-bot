@@ -169,7 +169,7 @@ async function connectToWhatsApp() {
     try {
     const { state, saveCreds } = await useMultiFileAuthState(authFolder);
 
-    const sock = makeWASocket({
+    sock = makeWASocket({
         logger: pino({ level: 'silent' }),
         auth: state,
         browser: ['Windows', 'Chrome', '115.0.0.0']
