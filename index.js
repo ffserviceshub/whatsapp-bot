@@ -343,7 +343,7 @@ async function connectToWhatsApp() {
 
             // Free Trial: UID গ্রহণ, Admin-কে জানানো
             if (userState.get(senderID) === 'awaiting_trial_uid') {
-                if (!/^\\d{8,12}$/.test(text)) {
+                if (!/^\d{8,12}$/.test(text)) {
                     await sock.sendMessage(senderID, {
                         text: `⚠️ সঠিক Free Fire UID দিন। UID শুধু ৮–১২টি সংখ্যা হতে হবে। Password বা OTP দেবেন না।`
                     });
@@ -722,11 +722,9 @@ Trial পেতে আপনার Free Fire UID পাঠান।
 💬 Admin: \`5\`
 🎁 Free Trial: \`6\`
 
-আমাদের Admin বর্তমানে ব্যস্ত আছেন। ❤️
+আপনার মেসেজটি Admin-এর কাছে পৌঁছেছে। ❤️
 
-যত দ্রুত সম্ভব আপনার সাথে যোগাযোগ করবেন। অনুগ্রহ করে অপেক্ষা করুন।
-
-আমাদের Admin বর্তমানে ব্যস্ত আছেন। যত দ্রুত সম্ভব যোগাযোগ করবেন। অনুগ্রহ করে অপেক্ষা করুন।
+আমাদের Admin বর্তমানে ব্যস্ত আছেন। যত দ্রুত সম্ভব আপনার সাথে যোগাযোগ করবেন। অনুগ্রহ করে অপেক্ষা করুন।
 
 ↩️ মূল মেনু: \`Menu\`
 
