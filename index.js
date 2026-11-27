@@ -18,6 +18,8 @@ app.listen(PORT, () => {
 
 // মেমোরি স্টোরেজ
 const supportUsers = new Set();
+// এই চালু সেশনে যেসব গ্রাহক Free Trial-এর UID দিয়েছেন
+const trialRequestedUsers = new Set();
 const userState = new Map();
 const lastUserActivity = new Map();
 const lastErrorActivity = new Map();
@@ -86,13 +88,13 @@ function isOrderMessage(messageText) {
         /sender number\s*:/i.test(messageText);
 
     // WhatsApp-এ পাঠানো order template-এর জন্য
-    const hasPackage = /package\s*:/i.test(messageText);
+    const hasপ্যাকেজ = /(?:প্যাকেজ|প্যাকেজ)\s*:/i.test(messageText);
     const hasPrice = /price\s*:/i.test(messageText);
     const hasUID = /(?:free fire\s*)?uid\s*:/i.test(messageText);
     const hasTrxID = /(?:trx\s*id|trxid|transaction\s*id)\s*\/?\s*(?:number)?\s*:/i.test(messageText);
 
     const whatsappOrder =
-        hasPackage &&
+        hasপ্যাকেজ &&
         hasPrice &&
         hasUID &&
         hasTrxID;
@@ -102,8 +104,8 @@ function isOrderMessage(messageText) {
 
 
 // বড় প্যাকেজের তালিকা: সাধারণ মেনুতে দেখানো হবে না
-function getBigPackagesMessage() {
-    return `👑 *FF ServicesPicks — Premium Packages*
+function getBigপ্যাকেজসমূহMessage() {
+    return `👑 *FF ServicesPicks — Premium প্যাকেজসমূহ*
 
 আপনি বড় ও দীর্ঘমেয়াদি প্যাকেজ দেখতে চেয়েছেন। ❤️
 পছন্দের প্যাকেজ কোড পাঠিয়ে অর্ডার শুরু করতে পারেন।
@@ -265,19 +267,19 @@ async function connectToWhatsApp() {
             // Admin নিজের WhatsApp থেকে কোনো customer chat-এ !big পাঠালে
             // ওই customer-এর chat-এই বড় প্যাকেজের তালিকা দেখানো হবে।
             if (msg.key.fromMe) {
-                if (['!big', '/big', '!vip-packages'].includes(text)) {
-                    // Admin-এর trigger message customer chat থেকে delete করে শুধু package list পাঠাও
+                if (['!big', '/big', '!vip-প্যাকেজs'].includes(text)) {
+                    // Admin-এর trigger message customer chat থেকে delete করে শুধু প্যাকেজের তালিকা পাঠাও
                     try {
                         await sock.sendMessage(senderID, { delete: msg.key });
                     } catch (deleteError) {
                         console.error('Could not delete admin trigger message:', deleteError);
                     }
 
-                    userState.set(senderID, 'viewing_big_packages');
+                    userState.set(senderID, 'viewing_big_প্যাকেজs');
                     await sock.sendMessage(senderID, {
-                        text: getBigPackagesMessage()
+                        text: getBigপ্যাকেজসমূহMessage()
                     });
-                    console.log(`👑 Admin opened big packages for ${senderID}`);
+                    console.log(`👑 Admin opened big প্যাকেজs for ${senderID}`);
                 }
                 return;
             }
@@ -300,10 +302,10 @@ async function connectToWhatsApp() {
 
             // Admin কাস্টমারকে যে গোপন keyword দেবেন, সেটি লিখলেই বড় প্যাকেজ খুলবে।
             if (text === 'ffvip') {
-                userState.set(senderID, 'viewing_big_packages');
+                userState.set(senderID, 'viewing_big_প্যাকেজs');
                 lastUserActivity.set(senderID, currentTime);
                 await sock.sendMessage(senderID, {
-                    text: getBigPackagesMessage()
+                    text: getBigপ্যাকেজসমূহMessage()
                 });
                 return;
             }
@@ -361,7 +363,7 @@ async function connectToWhatsApp() {
 
                 const welcomeText = `🎮 *FF ServicesPicks-এ স্বাগতম!* ❤️
 
-আপনার Free Fire ID-এর জন্য Likes Package দেখুন।
+আপনার Free Fire ID-এর জন্য Likes প্যাকেজ দেখুন।
 
 🌐 Website: https://sptopup.pages.dev/`;
 
@@ -370,12 +372,12 @@ async function connectToWhatsApp() {
 
 👇 পছন্দের অপশনের নম্বর লিখুন:
 
-1️⃣ 🔥 Likes Package ও মূল্য
+1️⃣ 🔥 Likes প্যাকেজ ও মূল্য
 2️⃣ 💳 পেমেন্টের নিয়ম
 3️⃣ 📋 অর্ডার করার নিয়ম
 4️⃣ ❓ সাধারণ প্রশ্ন ও নিরাপত্তা
 5️⃣ 💬 Admin-এর সাথে যোগাযোগ
-6️⃣ 🎁 200+ Likes FREE TRIAL
+${trialRequestedUsers.has(senderID) ? '' : '6️⃣ 🎁 বিনামূল্যে ২০০+ লাইক ট্রায়াল\\n'}
 
 🤖 এটি আমাদের স্বয়ংক্রিয় Bot Menu।
 
@@ -395,6 +397,7 @@ async function connectToWhatsApp() {
                 }
 
                 userState.delete(senderID);
+                trialRequestedUsers.add(senderID);
                 lastUserActivity.set(senderID, currentTime);
 
                 const adminJid = '8801951722651@s.whatsapp.net';
@@ -423,22 +426,22 @@ async function connectToWhatsApp() {
             // অপশন ১: প্যাকেজ ও দাম
             if (
                 text === '1' ||
-                text.includes('package') ||
+                text.includes('প্যাকেজ') ||
                 text.includes('like') ||
                 text.includes('প্যাকেজ') ||
                 text.includes('দাম')
             ) {
-                userState.set(senderID, 'viewing_packages');
+                userState.set(senderID, 'viewing_প্যাকেজs');
                 lastUserActivity.set(senderID, currentTime);
 
                 await sock.sendMessage(senderID, {
-                    text: `🔥 *FF ServicesPicks — Starter Packages*
+                    text: `🔥 *FF ServicesPicks — Starter প্যাকেজসমূহ*
 
 শুরু করার জন্য সাশ্রয়ী প্যাকেজগুলো নিচে দেওয়া হলো। ❤️
 পছন্দের প্যাকেজ কোড (p1–p8) পাঠিয়ে অর্ডার শুরু করুন।
 
 ━━━━━━━━━━━━━━━━━━
-📦 *Starter Packages*
+📦 *Starter প্যাকেজসমূহ*
 ━━━━━━━━━━━━━━━━━━
 
 1️⃣ *Starter (30+ Likes) (p1)*
@@ -504,16 +507,16 @@ Yearly ও Lifetime-এর মতো বড় প্যাকেজের জন�
             }
 
             // প্যাকেজ কোড
-            const regularPackageCodes = ['p1', 'p2', 'p3', 'p4', 'p5', 'p6', 'p7', 'p8'];
-            const bigPackageCodes = ['p9', 'p10', 'p11', 'p12'];
+            const regularপ্যাকেজCodes = ['p1', 'p2', 'p3', 'p4', 'p5', 'p6', 'p7', 'p8'];
+            const bigপ্যাকেজCodes = ['p9', 'p10', 'p11', 'p12'];
 
-            if (regularPackageCodes.includes(text) || bigPackageCodes.includes(text)) {
-                const isBigPackageCode = bigPackageCodes.includes(text);
-                const requiredState = isBigPackageCode ? 'viewing_big_packages' : 'viewing_packages';
+            if (regularপ্যাকেজCodes.includes(text) || bigপ্যাকেজCodes.includes(text)) {
+                const isBigপ্যাকেজCode = bigপ্যাকেজCodes.includes(text);
+                const requiredState = isBigপ্যাকেজCode ? 'viewing_big_প্যাকেজs' : 'viewing_প্যাকেজs';
 
                 if (userState.get(senderID) !== requiredState) {
                     await sock.sendMessage(senderID, {
-                        text: isBigPackageCode
+                        text: isBigপ্যাকেজCode
                             ? `⚠️ *বড় প্যাকেজের তালিকা আগে খুলুন।*
 
 Admin-এর সঙ্গে যোগাযোগ করুন অথবা Admin দেওয়া access keyword লিখুন।
@@ -521,7 +524,7 @@ Admin-এর সঙ্গে যোগাযোগ করুন অথবা Adm
 ↩️ মেনু দেখতে "Menu" লিখুন।`
                             : `⚠️ *প্রথমে প্যাকেজ লিস্ট দেখে তারপর কোড দিন!*
 
-প্রথমে চ্যাটে 1 লিখে Starter Packages দেখুন। তারপর p1 থেকে p8-এর মধ্যে পছন্দের কোড পাঠান।
+প্রথমে চ্যাটে 1 লিখে Starter প্যাকেজসমূহ দেখুন। তারপর p1 থেকে p8-এর মধ্যে পছন্দের কোড পাঠান।
 
 ↩️ মেনু দেখতে "Menu" লিখুন।`
                     });
@@ -530,7 +533,7 @@ Admin-এর সঙ্গে যোগাযোগ করুন অথবা Adm
 
                 lastUserActivity.set(senderID, currentTime);
 
-                const packages = {
+                const প্যাকেজs = {
                     p1: ['Starter (30+ Likes)', '৳৭০'],
                     p2: ['Value (50+ Likes)', '৳১২০'],
                     p3: ['Starter Plus (30+ Likes)', '৳১১০'],
@@ -545,7 +548,7 @@ Admin-এর সঙ্গে যোগাযোগ করুন অথবা Adm
                     p12: ['Lifetime VIP (200+ Likes)', '৳৫,০০০']
                 };
 
-                const [pkgName, pkgPrice] = packages[text];
+                const [pkgName, pkgPrice] = প্যাকেজs[text];
 
                 userState.set(senderID, 'awaiting_payment_info');
 
@@ -571,7 +574,7 @@ Admin-এর সঙ্গে যোগাযোগ করুন অথবা Adm
                 });
 
                 await sock.sendMessage(senderID, {
-                    text: `Package: ${pkgName}
+                    text: `প্যাকেজ: ${pkgName}
 Price: ${pkgPrice}
 UID: [এখানে আপনার গেমের UID দিন]
 Payment Method: [bKash/Nagad]
@@ -591,7 +594,7 @@ TrxID/Number: [TrxID অথবা যে bKash/Nagad নম্বর থেক�
 
 দয়া করে নিচের তথ্যগুলোসহ মেসেজটি পাঠান:
 
-Package: [প্যাকেজের নাম]
+প্যাকেজ: [প্যাকেজের নাম]
 Price: [প্যাকেজের দাম]
 UID: [আপনার গেমের UID]
 Payment Method: [bKash/Nagad]
@@ -626,7 +629,7 @@ TrxID/Number: [TrxID অথবা যে bKash/Nagad নম্বর থেক�
 ⚠️ *টাকা পাঠানোর পর তথ্য পাঠানোর নিয়ম:*
 নিচের ফরম্যাটটি কপি করে আপনার তথ্য দিয়ে পাঠান:
 
-Package: [আপনার পছন্দের প্যাকেজের নাম]
+প্যাকেজ: [আপনার পছন্দের প্যাকেজের নাম]
 Price: [প্যাকেজের দাম]
 UID: [এখানে আপনার গেমের UID দিন]
 Payment Method: [bKash/Nagad]
@@ -656,7 +659,7 @@ TrxID/Number: [TrxID অথবা যে bKash/Nagad নম্বর থেক�
 ৩️⃣ bKash (\`01733054857\`) অথবা Nagad (\`01951722651\`)—যে মাধ্যমে পেমেন্ট করবেন, সেই নম্বরে সঠিক টাকা Send Money করুন।
 ৪️⃣ এরপর নিচের ফরম্যাটটি কপি করে তথ্য দিয়ে পাঠান:
 
-Package: [প্যাকেজের নাম]
+প্যাকেজ: [প্যাকেজের নাম]
 Price: [প্যাকেজের দাম]
 UID: [UID দিন]
 Payment Method: [bKash/Nagad]
@@ -761,10 +764,10 @@ Trial পেতে আপনার Free Fire UID পাঠান।
 
 দুঃখিত, আপনার মেসেজটি বুঝতে পারিনি। 😊
 
-📦 Package: \`1\`
+📦 প্যাকেজ: \`1\`
 ❓ প্রশ্ন ও নিরাপত্তা: \`4\`
 💬 Admin: \`5\`
-🎁 Free Trial: \`6\`
+${trialRequestedUsers.has(senderID) ? '' : '🎁 বিনামূল্যে ট্রায়াল: \\`6\\`\\n'}
 
 আপনার মেসেজটি Admin-এর কাছে পৌঁছেছে। ❤️
 
