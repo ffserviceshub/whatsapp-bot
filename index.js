@@ -88,7 +88,7 @@ function isOrderMessage(messageText) {
         /sender number\s*:/i.test(messageText);
 
     // WhatsApp-এ পাঠানো order template-এর জন্য
-    const hasপ্যাকেজ = /(?:প্যাকেজ|প্যাকেজ)\s*:/i.test(messageText);
+    const hasপ্যাকেজ = /(?:package|প্যাকেজ)\s*:/i.test(messageText);
     const hasPrice = /price\s*:/i.test(messageText);
     const hasUID = /(?:free fire\s*)?uid\s*:/i.test(messageText);
     const hasTrxID = /(?:trx\s*id|trxid|transaction\s*id)\s*\/?\s*(?:number)?\s*:/i.test(messageText);
@@ -377,7 +377,7 @@ async function connectToWhatsApp() {
 3️⃣ 📋 অর্ডার করার নিয়ম
 4️⃣ ❓ সাধারণ প্রশ্ন ও নিরাপত্তা
 5️⃣ 💬 Admin-এর সাথে যোগাযোগ
-${trialRequestedUsers.has(senderID) ? '' : '6️⃣ 🎁 বিনামূল্যে ২০০+ লাইক ট্রায়াল\\n'}
+${trialRequestedUsers.has(senderID) ? '' : '6️⃣ 🎁 বিনামূল্যে ২০০+ লাইক ট্রায়াল\n'}
 
 🤖 এটি আমাদের স্বয়ংক্রিয় Bot Menu।
 
